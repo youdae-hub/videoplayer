@@ -1,7 +1,10 @@
 export { VideoPlayer } from './components/VideoPlayer';
+export { ErrorBoundary } from './components/ErrorBoundary';
 export { useVideoPlayer } from './hooks/useVideoPlayer';
 export { useFullscreen } from './hooks/useFullscreen';
 export { useControlsVisibility } from './hooks/useControlsVisibility';
 export { useMediaQuery } from './hooks/useMediaQuery';
+export { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+export { useDoubleTap } from './hooks/useDoubleTap';
 export { formatTime } from './utils/formatTime';
 export type { Video, Subtitle, PlaybackState, VideoPlayerProps } from './types';

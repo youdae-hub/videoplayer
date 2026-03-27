@@ -89,15 +89,15 @@ import { VideoPlayer } from '@videoplayer/core';
 - [x] .env.example with configuration docs
 - [x] Vite library build config for npm publish
 
-### Phase 5: Polish + Accessibility
-- [ ] Keyboard shortcuts (Space, Arrow keys, f, m, c)
-- [ ] Mobile double-tap to skip with ripple animation
-- [ ] Loading skeletons and error states
-- [ ] Progress bar time tooltip on hover
-- [ ] CSS transitions (control bar fade, settings menu, volume slider)
-- [ ] ARIA labels and role attributes
-- [ ] Error boundary component
-- [ ] Final responsive testing and adjustments
+### Phase 5: Polish + Accessibility ✅
+- [x] Keyboard shortcuts (Space, Arrow keys, f, m, c)
+- [x] Mobile double-tap to skip with ripple animation
+- [x] Loading skeletons and error states
+- [x] Progress bar time tooltip on hover
+- [x] CSS transitions (control bar fade, settings menu, volume slider)
+- [x] ARIA labels and role attributes
+- [x] Error boundary component
+- [x] Final responsive testing and adjustments
 
 ## Test Video Resources
 

@@ -1,15 +1,17 @@
 # Progress
 
-## Current Status: Phase 4 - Complete ✅
+## Current Status: Phase 5 - Complete ✅ (All MVP Phases Done)
 
 ## Test Results
-- 24 test files, 124 tests passing
-- Hooks: useVideoPlayer (13), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10)
+- 31 test files, 159 tests passing
+- Hooks: useVideoPlayer (13), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10), useKeyboardShortcuts (9), useDoubleTap (6)
 - Utils: formatTime (9)
-- Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11)
+- Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5)
+- Services: apiClient (4), mockVideoService (5), strapiVideoService (4), createVideoService (2), CmsPage (5)
+- Pages: VideoListPage (3), VideoPlayerPage (5), VideoListGrid (3), VideoCard (5)
 
 ## Build Output
-- ESM: 16.6KB | UMD: 13KB | CSS: 4.35KB
+- ESM: 23.7KB | UMD: 18.4KB | CSS: 6.89KB
 
 ## Phase History
 
@@ -69,8 +71,19 @@
 - [x] Tests: apiClient (4), mockVideoService (5), strapiVideoService (4), createVideoService (2), CmsPage (5)
 - [x] Vite library build verified (ESM 16.6KB, UMD 13KB, CSS 4.35KB)
 
-### Phase 5: Polish + Accessibility
-- [ ] Not started
+### Phase 5: Polish + Accessibility (2026-03-27) ✅
+- [x] `useKeyboardShortcuts` hook - Space, Arrow keys, f, m, c shortcuts with input field exclusion
+- [x] `useDoubleTap` hook - 300ms double-tap detection with left/right side split
+- [x] DoubleTapOverlay - ripple animation + skip text (« 10s / 10s »)
+- [x] BufferingIndicator - spinner overlay on video `waiting` event
+- [x] ErrorOverlay - error message + retry button on video `error` event
+- [x] ProgressBarTooltip - hover time preview with position clamping
+- [x] ErrorBoundary - React class component with fallback UI and reset
+- [x] CSS animations: settings slide-up, ripple expand, spinner, button scale on press
+- [x] ARIA: `role="region"` on player, `aria-expanded`/`aria-haspopup` on settings, `role="menu"`, `role="alert"` on errors
+- [x] `tabIndex={0}` on player container for keyboard focus, `focus-visible` outline
+- [x] Mobile: double-tap to skip replaces single tap for controls toggle
+- [x] Tests: useKeyboardShortcuts (9), useDoubleTap (6), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5)
 
 ## Decisions Log
 
@@ -87,3 +100,5 @@
 | 2026-03-27 | pointer: coarse media query | Detect touch vs mouse by input method, not viewport width |
 | 2026-03-27 | Fullscreen on container div | Custom controls persist in fullscreen mode |
 | 2026-03-27 | 2-row ControlBar layout | Progress bar on top row for better UX, controls on bottom row |
+| 2026-03-27 | ErrorBoundary wraps VideoPlayer | Isolate player crashes from host app |
+| 2026-03-27 | Double-tap with single-tap delay | 300ms delay distinguishes single vs double tap on mobile |
