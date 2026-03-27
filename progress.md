@@ -1,17 +1,17 @@
 # Progress
 
-## Current Status: Phase 5 - Complete ✅ (All MVP Phases Done)
+## Current Status: Post-MVP Improvements
 
 ## Test Results
-- 31 test files, 159 tests passing
-- Hooks: useVideoPlayer (13), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10), useKeyboardShortcuts (9), useDoubleTap (6)
+- 33 test files, 178 tests passing
+- Hooks: useVideoPlayer (17), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10), useKeyboardShortcuts (13), useDoubleTap (6)
 - Utils: formatTime (9)
-- Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5)
+- Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5), SubtitleSelector (7), KeyboardGuide (5)
 - Services: apiClient (4), mockVideoService (5), strapiVideoService (4), createVideoService (2), CmsPage (5)
 - Pages: VideoListPage (3), VideoPlayerPage (5), VideoListGrid (3), VideoCard (5)
 
 ## Build Output
-- ESM: 23.7KB | UMD: 18.4KB | CSS: 6.89KB
+- ESM: 27.50KB | UMD: 21.25KB | CSS: 8.35KB
 
 ## Phase History
 
@@ -84,6 +84,16 @@
 - [x] `tabIndex={0}` on player container for keyboard focus, `focus-visible` outline
 - [x] Mobile: double-tap to skip replaces single tap for controls toggle
 - [x] Tests: useKeyboardShortcuts (9), useDoubleTap (6), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5)
+
+### Post-MVP: Subtitle & Keyboard Improvements (2026-03-27)
+- [x] Subtitle language selector (replace on/off toggle with language list)
+- [x] SubtitleSelector component with Off + language options
+- [x] textTracks API integration for subtitle switching
+- [x] WebVTT subtitle files (Korean, English) for Big Buck Bunny
+- [x] Fix keyboard shortcuts f/m/c for Korean IME (e.key → e.code for letter keys)
+- [x] KeyboardGuide overlay component (? key or button to toggle)
+- [x] Keyboard guide button in ControlBar
+- [x] Korean IME test cases (ㄹ→KeyF, ㅡ→KeyM, ㅊ→KeyC)
 
 ## Decisions Log
 

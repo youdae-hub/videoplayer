@@ -20,6 +20,7 @@ interface ControlBarProps {
   onSpeedChange: (speed: number) => void;
   onSubtitleSelect: (subtitleId: string | null) => void;
   onToggleFullscreen: () => void;
+  onToggleGuide: () => void;
 }
 
 export function ControlBar({
@@ -34,6 +35,7 @@ export function ControlBar({
   onSpeedChange,
   onSubtitleSelect,
   onToggleFullscreen,
+  onToggleGuide,
 }: ControlBarProps) {
   return (
     <div
@@ -60,6 +62,13 @@ export function ControlBar({
         />
         <TimeDisplay currentTime={state.currentTime} duration={state.duration} />
         <div className={styles.spacer} />
+        <button
+          className={styles.guideButton}
+          onClick={onToggleGuide}
+          aria-label="Keyboard shortcuts"
+        >
+          ?
+        </button>
         <SettingsMenu
           playbackSpeed={state.playbackSpeed}
           subtitles={subtitles}

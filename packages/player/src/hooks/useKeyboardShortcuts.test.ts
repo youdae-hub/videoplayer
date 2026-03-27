@@ -8,8 +8,8 @@ function createContainer() {
   return div;
 }
 
-function fireKey(key: string, target?: HTMLElement) {
-  const event = new KeyboardEvent('keydown', { key, bubbles: true });
+function fireKey(key: string, target?: HTMLElement, code?: string) {
+  const event = new KeyboardEvent('keydown', { key, code: code || key, bubbles: true });
   (target || document).dispatchEvent(event);
 }
 
@@ -21,6 +21,7 @@ describe('useKeyboardShortcuts', () => {
     toggleMute: vi.fn(),
     toggleFullscreen: vi.fn(),
     toggleSubtitles: vi.fn(),
+    toggleGuide: vi.fn(),
     volume: 0.5,
   };
 
@@ -75,28 +76,60 @@ describe('useKeyboardShortcuts', () => {
     expect(actions.setVolume).toHaveBeenCalledWith(0.4);
   });
 
-  it('toggles fullscreen on f key', () => {
+  it('toggles fullscreen on f key (using e.code)', () => {
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey('f', container);
+    fireKey('f', container, 'KeyF');
     expect(actions.toggleFullscreen).toHaveBeenCalledOnce();
   });
 
-  it('toggles mute on m key', () => {
+  it('toggles mute on m key (using e.code)', () => {
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey('m', container);
+    fireKey('m', container, 'KeyM');
     expect(actions.toggleMute).toHaveBeenCalledOnce();
   });
 
-  it('toggles subtitles on c key', () => {
+  it('toggles subtitles on c key (using e.code)', () => {
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey('c', container);
+    fireKey('c', container, 'KeyC');
     expect(actions.toggleSubtitles).toHaveBeenCalledOnce();
+  });
+
+  it('toggles fullscreen with Korean IME active (e.key=ㄹ, e.code=KeyF)', () => {
+    const ref = { current: container };
+    renderHook(() => useKeyboardShortcuts(ref, actions));
+
+    fireKey('ㄹ', container, 'KeyF');
+    expect(actions.toggleFullscreen).toHaveBeenCalledOnce();
+  });
+
+  it('toggles mute with Korean IME active (e.key=ㅡ, e.code=KeyM)', () => {
+    const ref = { current: container };
+    renderHook(() => useKeyboardShortcuts(ref, actions));
+
+    fireKey('ㅡ', container, 'KeyM');
+    expect(actions.toggleMute).toHaveBeenCalledOnce();
+  });
+
+  it('toggles subtitles with Korean IME active (e.key=ㅊ, e.code=KeyC)', () => {
+    const ref = { current: container };
+    renderHook(() => useKeyboardShortcuts(ref, actions));
+
+    fireKey('ㅊ', container, 'KeyC');
+    expect(actions.toggleSubtitles).toHaveBeenCalledOnce();
+  });
+
+  it('toggles guide on ? key', () => {
+    const ref = { current: container };
+    renderHook(() => useKeyboardShortcuts(ref, actions));
+
+    fireKey('?', container);
+    expect(actions.toggleGuide).toHaveBeenCalledOnce();
   });
 
   it('ignores keys when focus is on input', () => {

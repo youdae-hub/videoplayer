@@ -11,6 +11,7 @@ import { BufferingIndicator } from './BufferingIndicator';
 import { ErrorOverlay } from './ErrorOverlay';
 import { DoubleTapOverlay } from './DoubleTapOverlay';
 import { ErrorBoundary } from './ErrorBoundary';
+import { KeyboardGuide } from './KeyboardGuide';
 import styles from '../styles/player.module.css';
 
 function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: VideoPlayerProps) {
@@ -18,6 +19,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
   const [buffering, setBuffering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guideVisible, setGuideVisible] = useState(false);
 
   const {
     videoRef,
@@ -53,6 +55,8 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     }
   }, [subtitles, state.activeSubtitleId, setActiveSubtitle]);
 
+  const toggleGuide = useCallback(() => setGuideVisible((prev) => !prev), []);
+
   useKeyboardShortcuts(containerRef, {
     togglePlay,
     skip,
@@ -60,6 +64,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     toggleMute,
     toggleFullscreen,
     toggleSubtitles: toggleSubtitlesCycle,
+    toggleGuide,
     volume: state.volume,
   });
 
@@ -150,6 +155,8 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
       <BufferingIndicator visible={buffering && !error} />
       <DoubleTapOverlay side={ripple.side} x={ripple.x} y={ripple.y} />
 
+      <KeyboardGuide visible={guideVisible} onClose={toggleGuide} />
+
       {error ? (
         <ErrorOverlay message={error} onRetry={handleRetry} />
       ) : (
@@ -165,6 +172,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
           onSpeedChange={setPlaybackSpeed}
           onSubtitleSelect={setActiveSubtitle}
           onToggleFullscreen={toggleFullscreen}
+          onToggleGuide={toggleGuide}
         />
       )}
     </div>
