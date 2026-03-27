@@ -11,7 +11,7 @@ type Action =
   | { type: 'SET_VOLUME'; payload: number }
   | { type: 'TOGGLE_MUTE' }
   | { type: 'SET_PLAYBACK_SPEED'; payload: number }
-  | { type: 'TOGGLE_SUBTITLES' };
+  | { type: 'SET_ACTIVE_SUBTITLE'; payload: string | null };
 
 const initialState: PlaybackState = {
   isPlaying: false,
@@ -52,8 +52,12 @@ function reducer(state: PlaybackState, action: Action): PlaybackState {
       return { ...state, isMuted: !state.isMuted };
     case 'SET_PLAYBACK_SPEED':
       return { ...state, playbackSpeed: action.payload };
-    case 'TOGGLE_SUBTITLES':
-      return { ...state, subtitlesEnabled: !state.subtitlesEnabled };
+    case 'SET_ACTIVE_SUBTITLE':
+      return {
+        ...state,
+        activeSubtitleId: action.payload,
+        subtitlesEnabled: action.payload !== null,
+      };
     default:
       return state;
   }
@@ -115,16 +119,24 @@ export function useVideoPlayer() {
     dispatch({ type: 'SET_PLAYBACK_SPEED', payload: speed });
   }, []);
 
-  const toggleSubtitles = useCallback(() => {
+  const setActiveSubtitle = useCallback((subtitleId: string | null) => {
     const video = videoRef.current;
-    if (video && video.textTracks.length > 0) {
-      const newMode = state.subtitlesEnabled ? 'hidden' : 'showing';
+    if (video) {
       for (let i = 0; i < video.textTracks.length; i++) {
-        video.textTracks[i].mode = newMode;
+        video.textTracks[i].mode = 'hidden';
+      }
+      if (subtitleId !== null) {
+        for (let i = 0; i < video.textTracks.length; i++) {
+          const track = video.textTracks[i];
+          if (track.language === subtitleId || track.label === subtitleId) {
+            track.mode = 'showing';
+            break;
+          }
+        }
       }
     }
-    dispatch({ type: 'TOGGLE_SUBTITLES' });
-  }, [state.subtitlesEnabled]);
+    dispatch({ type: 'SET_ACTIVE_SUBTITLE', payload: subtitleId });
+  }, []);
 
   return {
     videoRef,
@@ -137,6 +149,6 @@ export function useVideoPlayer() {
     setVolume,
     toggleMute,
     setPlaybackSpeed,
-    toggleSubtitles,
+    setActiveSubtitle,
   };
 }

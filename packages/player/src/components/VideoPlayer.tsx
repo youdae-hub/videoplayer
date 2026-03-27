@@ -30,7 +30,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     setVolume,
     toggleMute,
     setPlaybackSpeed,
-    toggleSubtitles,
+    setActiveSubtitle,
   } = useVideoPlayer();
 
   const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
@@ -39,13 +39,27 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     isTouchDevice,
   });
 
+  const toggleSubtitlesCycle = useCallback(() => {
+    if (!subtitles || subtitles.length === 0) return;
+    if (state.activeSubtitleId === null) {
+      setActiveSubtitle(subtitles[0].language);
+    } else {
+      const currentIndex = subtitles.findIndex((s) => s.language === state.activeSubtitleId);
+      if (currentIndex < subtitles.length - 1) {
+        setActiveSubtitle(subtitles[currentIndex + 1].language);
+      } else {
+        setActiveSubtitle(null);
+      }
+    }
+  }, [subtitles, state.activeSubtitleId, setActiveSubtitle]);
+
   useKeyboardShortcuts(containerRef, {
     togglePlay,
     skip,
     setVolume,
     toggleMute,
     toggleFullscreen,
-    toggleSubtitles,
+    toggleSubtitles: toggleSubtitlesCycle,
     volume: state.volume,
   });
 
@@ -75,6 +89,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
   }, [videoRef, handleLoadedMetadata]);
 
   const handleVideoClick = useCallback(() => {
+    containerRef.current?.focus();
     if (!isTouchDevice) {
       togglePlay();
     }
@@ -141,13 +156,14 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
         <ControlBar
           state={fullState}
           visible={visible}
+          subtitles={subtitles || []}
           onTogglePlay={togglePlay}
           onSkip={skip}
           onSeek={seek}
           onVolumeChange={setVolume}
           onToggleMute={toggleMute}
           onSpeedChange={setPlaybackSpeed}
-          onSubtitleToggle={toggleSubtitles}
+          onSubtitleSelect={setActiveSubtitle}
           onToggleFullscreen={toggleFullscreen}
         />
       )}

@@ -1,4 +1,4 @@
-import type { PlaybackState } from '../types';
+import type { PlaybackState, Subtitle } from '../types';
 import { PlayPauseButton } from './PlayPauseButton';
 import { SkipButton } from './SkipButton';
 import { ProgressBar } from './ProgressBar';
@@ -11,26 +11,28 @@ import styles from '../styles/player.module.css';
 interface ControlBarProps {
   state: PlaybackState;
   visible: boolean;
+  subtitles: Subtitle[];
   onTogglePlay: () => void;
   onSkip: (seconds: number) => void;
   onSeek: (time: number) => void;
   onVolumeChange: (volume: number) => void;
   onToggleMute: () => void;
   onSpeedChange: (speed: number) => void;
-  onSubtitleToggle: () => void;
+  onSubtitleSelect: (subtitleId: string | null) => void;
   onToggleFullscreen: () => void;
 }
 
 export function ControlBar({
   state,
   visible,
+  subtitles,
   onTogglePlay,
   onSkip,
   onSeek,
   onVolumeChange,
   onToggleMute,
   onSpeedChange,
-  onSubtitleToggle,
+  onSubtitleSelect,
   onToggleFullscreen,
 }: ControlBarProps) {
   return (
@@ -60,9 +62,10 @@ export function ControlBar({
         <div className={styles.spacer} />
         <SettingsMenu
           playbackSpeed={state.playbackSpeed}
-          subtitlesEnabled={state.subtitlesEnabled}
+          subtitles={subtitles}
+          activeSubtitleId={state.activeSubtitleId}
           onSpeedChange={onSpeedChange}
-          onSubtitleToggle={onSubtitleToggle}
+          onSubtitleSelect={onSubtitleSelect}
         />
         <FullscreenButton
           isFullscreen={state.isFullscreen}

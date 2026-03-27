@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
@@ -8,8 +8,9 @@ function createContainer() {
   return div;
 }
 
-function fireKey(target: HTMLElement, key: string) {
-  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+function fireKey(key: string, target?: HTMLElement) {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true });
+  (target || document).dispatchEvent(event);
 }
 
 describe('useKeyboardShortcuts', () => {
@@ -23,90 +24,88 @@ describe('useKeyboardShortcuts', () => {
     volume: 0.5,
   };
 
+  let container: HTMLElement;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    container = createContainer();
+  });
+
+  afterEach(() => {
+    container.remove();
   });
 
   it('toggles play on Space key', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, ' ');
+    fireKey(' ', container);
     expect(actions.togglePlay).toHaveBeenCalledOnce();
   });
 
   it('skips backward on ArrowLeft', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'ArrowLeft');
+    fireKey('ArrowLeft', container);
     expect(actions.skip).toHaveBeenCalledWith(-10);
   });
 
   it('skips forward on ArrowRight', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'ArrowRight');
+    fireKey('ArrowRight', container);
     expect(actions.skip).toHaveBeenCalledWith(10);
   });
 
   it('increases volume on ArrowUp', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'ArrowUp');
+    fireKey('ArrowUp', container);
     expect(actions.setVolume).toHaveBeenCalledWith(0.6);
   });
 
   it('decreases volume on ArrowDown', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'ArrowDown');
+    fireKey('ArrowDown', container);
     expect(actions.setVolume).toHaveBeenCalledWith(0.4);
   });
 
   it('toggles fullscreen on f key', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'f');
+    fireKey('f', container);
     expect(actions.toggleFullscreen).toHaveBeenCalledOnce();
   });
 
   it('toggles mute on m key', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'm');
+    fireKey('m', container);
     expect(actions.toggleMute).toHaveBeenCalledOnce();
   });
 
   it('toggles subtitles on c key', () => {
-    const container = createContainer();
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    fireKey(container, 'c');
+    fireKey('c', container);
     expect(actions.toggleSubtitles).toHaveBeenCalledOnce();
   });
 
   it('ignores keys when focus is on input', () => {
-    const container = createContainer();
     const input = document.createElement('input');
     container.appendChild(input);
     const ref = { current: container };
     renderHook(() => useKeyboardShortcuts(ref, actions));
 
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    fireKey(' ', input);
     expect(actions.togglePlay).not.toHaveBeenCalled();
   });
 });

@@ -1,20 +1,23 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type { Subtitle } from '../types';
 import { PlaybackSpeedSelector } from './PlaybackSpeedSelector';
-import { SubtitleToggle } from './SubtitleToggle';
+import { SubtitleSelector } from './SubtitleSelector';
 import styles from '../styles/player.module.css';
 
 interface SettingsMenuProps {
   playbackSpeed: number;
-  subtitlesEnabled: boolean;
+  subtitles: Subtitle[];
+  activeSubtitleId: string | null;
   onSpeedChange: (speed: number) => void;
-  onSubtitleToggle: () => void;
+  onSubtitleSelect: (subtitleId: string | null) => void;
 }
 
 export function SettingsMenu({
   playbackSpeed,
-  subtitlesEnabled,
+  subtitles,
+  activeSubtitleId,
   onSpeedChange,
-  onSubtitleToggle,
+  onSubtitleSelect,
 }: SettingsMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,11 @@ export function SettingsMenu({
         <div className={styles.settingsDropdown} role="menu">
           <PlaybackSpeedSelector currentSpeed={playbackSpeed} onSpeedChange={onSpeedChange} />
           <div className={styles.settingsDivider} />
-          <SubtitleToggle enabled={subtitlesEnabled} onToggle={onSubtitleToggle} />
+          <SubtitleSelector
+            subtitles={subtitles}
+            activeSubtitleId={activeSubtitleId}
+            onSelect={onSubtitleSelect}
+          />
         </div>
       )}
     </div>

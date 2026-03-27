@@ -19,6 +19,8 @@ export function useKeyboardShortcuts(
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
+      if (!containerRef.current?.contains(e.target as Node)) return;
+
       switch (e.key) {
         case ' ':
           e.preventDefault();
@@ -54,14 +56,11 @@ export function useKeyboardShortcuts(
           break;
       }
     },
-    [actions],
+    [actions, containerRef],
   );
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [containerRef, handleKeyDown]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 }
