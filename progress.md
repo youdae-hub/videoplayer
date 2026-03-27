@@ -3,12 +3,13 @@
 ## Current Status: Post-MVP Improvements
 
 ## Test Results
-- 33 test files, 178 tests passing
+- 35 test files, 199 tests passing
 - Hooks: useVideoPlayer (17), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10), useKeyboardShortcuts (13), useDoubleTap (6)
 - Utils: formatTime (9)
 - Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5), SubtitleSelector (7), KeyboardGuide (5)
 - Services: apiClient (4), mockVideoService (5), strapiVideoService (4), createVideoService (2), CmsPage (5)
-- Pages: VideoListPage (3), VideoPlayerPage (5), VideoListGrid (3), VideoCard (5)
+- Pages: VideoListPage (8), VideoPlayerPage (5), VideoListGrid (5), VideoCard (7)
+- New: ViewModeToggle (5), VideoPlayerModal (7)
 
 ## Build Output
 - ESM: 27.50KB | UMD: 21.25KB | CSS: 8.35KB
@@ -94,6 +95,14 @@
 - [x] KeyboardGuide overlay component (? key or button to toggle)
 - [x] Keyboard guide button in ControlBar
 - [x] Korean IME test cases (ㄹ→KeyF, ㅡ→KeyM, ㅊ→KeyC)
+
+### Post-MVP: A/B Test - Video Player Launch Mode (2026-03-27)
+- [x] ViewModeToggle component (페이지 이동 / 레이어 재생 radio toggle)
+- [x] VideoPlayerModal component (overlay player with ESC/click-outside close, scroll lock)
+- [x] VideoCard dual mode (Link for page mode, button for modal mode)
+- [x] VideoListGrid onVideoSelect prop passthrough
+- [x] VideoListPage view mode state with localStorage persistence
+- [x] Tests: ViewModeToggle (5), VideoPlayerModal (7), VideoCard (7), VideoListGrid (5), VideoListPage (8)
 
 ## Decisions Log
 

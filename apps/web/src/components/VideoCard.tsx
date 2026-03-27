@@ -4,14 +4,15 @@ import type { Video } from '@videoplayer/core';
 
 interface VideoCardProps {
   video: Video;
+  onSelect?: (video: Video) => void;
 }
 
-export function VideoCard({ video }: VideoCardProps) {
+const cardClass =
+  'group block overflow-hidden rounded-lg bg-neutral-900 transition-transform duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/40';
+
+function CardContent({ video }: { video: Video }) {
   return (
-    <Link
-      to={`/video/${video.id}`}
-      className="group block overflow-hidden rounded-lg bg-neutral-900 transition-transform duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/40"
-    >
+    <>
       <div className="relative aspect-video overflow-hidden bg-neutral-800">
         <img
           src={video.thumbnailUrl}
@@ -31,6 +32,25 @@ export function VideoCard({ video }: VideoCardProps) {
           {video.description}
         </p>
       </div>
+    </>
+  );
+}
+
+export function VideoCard({ video, onSelect }: VideoCardProps) {
+  if (onSelect) {
+    return (
+      <button
+        className={`${cardClass} w-full text-left`}
+        onClick={() => onSelect(video)}
+      >
+        <CardContent video={video} />
+      </button>
+    );
+  }
+
+  return (
+    <Link to={`/video/${video.id}`} className={cardClass}>
+      <CardContent video={video} />
     </Link>
   );
 }

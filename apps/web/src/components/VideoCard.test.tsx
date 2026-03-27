@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { VideoCard } from './VideoCard';
 import type { Video } from '@videoplayer/core';
@@ -43,9 +44,25 @@ describe('VideoCard', () => {
     expect(img).toHaveAttribute('alt', 'Test Video');
   });
 
-  it('links to video player page', () => {
+  it('links to video player page when no onSelect', () => {
     renderWithRouter(<VideoCard video={mockVideo} />);
     const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/video/1');
+  });
+
+  it('renders as button when onSelect is provided', () => {
+    const onSelect = vi.fn();
+    render(<VideoCard video={mockVideo} onSelect={onSelect} />);
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('calls onSelect with video when button is clicked', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<VideoCard video={mockVideo} onSelect={onSelect} />);
+
+    await user.click(screen.getByRole('button'));
+    expect(onSelect).toHaveBeenCalledWith(mockVideo);
   });
 });
