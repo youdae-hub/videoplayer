@@ -57,16 +57,17 @@ import { VideoPlayer } from '@videoplayer/core';
 - [x] Public API export via index.ts
 - [x] Demo page in apps/web with public test video (Big Buck Bunny)
 
-### Phase 2: Advanced Controls
-- [ ] `useFullscreen` hook
-- [ ] `useControlsVisibility` hook (hover on desktop, tap on mobile)
-- [ ] `useMediaQuery` hook (pointer: coarse detection)
-- [ ] VolumeControl component
-- [ ] FullscreenButton component
-- [ ] SettingsMenu component (dropdown/bottom sheet)
-- [ ] PlaybackSpeedSelector (0.5x ~ 2.0x)
-- [ ] SubtitleToggle + SubtitleOverlay (WebVTT)
-- [ ] Update ControlBar layout (responsive)
+### Phase 2: Advanced Controls ✅
+- [x] `useFullscreen` hook (Fullscreen API wrapper on container div)
+- [x] `useControlsVisibility` hook (hover on desktop, tap on mobile, 3s auto-hide)
+- [x] `useMediaQuery` hook (pointer: coarse detection for touch devices)
+- [x] VolumeControl component (3-state icon + expandable slider)
+- [x] FullscreenButton component (enter/exit toggle)
+- [x] SettingsMenu component (gear icon dropdown)
+- [x] PlaybackSpeedSelector (0.5x ~ 2.0x, 7 options)
+- [x] SubtitleToggle (on/off switch)
+- [x] Update ControlBar layout (2-row: progress top, controls bottom, responsive)
+- [x] Mobile CSS: larger touch targets (44px), hidden volume slider, bottom sheet settings
 
 ### Phase 3: Video List Page + Routing
 - [ ] React Router v6 setup (/, /video/:id, /cms)
