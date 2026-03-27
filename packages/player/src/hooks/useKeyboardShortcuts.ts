@@ -7,6 +7,7 @@ interface KeyboardShortcutActions {
   toggleMute: () => void;
   toggleFullscreen: () => void;
   toggleSubtitles?: () => void;
+  toggleGuide?: () => void;
   volume: number;
 }
 
@@ -42,15 +43,23 @@ export function useKeyboardShortcuts(
           e.preventDefault();
           actions.setVolume(Math.max(0, actions.volume - 0.1));
           break;
-        case 'f':
+        case '?':
+          e.preventDefault();
+          actions.toggleGuide?.();
+          break;
+      }
+
+      // Use e.code for letter keys to work regardless of IME state
+      switch (e.code) {
+        case 'KeyF':
           e.preventDefault();
           actions.toggleFullscreen();
           break;
-        case 'm':
+        case 'KeyM':
           e.preventDefault();
           actions.toggleMute();
           break;
-        case 'c':
+        case 'KeyC':
           e.preventDefault();
           actions.toggleSubtitles?.();
           break;

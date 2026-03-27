@@ -454,6 +454,127 @@
   }
 }
 
+/* Keyboard Guide */
+.guideOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 20;
+  animation: guideFadeIn 0.2s ease;
+}
+
+@keyframes guideFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.guideCard {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.guideHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.guideTitle {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.guideClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.guideClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.guideList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guideRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guideKey {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 28px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  flex-shrink: 0;
+}
+
+.guideDesc {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+/* Keyboard Guide Button */
+.guideButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.2s, transform 0.15s;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.guideButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.guideButton:active {
+  transform: scale(0.9);
+}
+
 /* Mobile: larger touch targets */
 @media (pointer: coarse) {
   .controlButton {
