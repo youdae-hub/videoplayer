@@ -1,12 +1,15 @@
 # Progress
 
-## Current Status: Phase 1 - Complete ✅
+## Current Status: Phase 2 - Complete ✅
 
 ## Test Results
-- 7 test files, 43 tests passing
-- formatTime: 9 tests
-- useVideoPlayer: 13 tests
-- Components (TimeDisplay, PlayPauseButton, SkipButton, ProgressBar, VideoPlayer): 21 tests
+- 15 test files, 88 tests passing
+- Hooks: useVideoPlayer (13), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10)
+- Utils: formatTime (9)
+- Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11)
+
+## Build Output
+- ESM: 16.6KB | UMD: 13KB | CSS: 4.35KB
 
 ## Phase History
 
@@ -30,10 +33,19 @@
 - [x] `formatTime` utility (MM:SS and H:MM:SS)
 - [x] Public API export via packages/player/src/index.ts
 - [x] Demo page in apps/web with Big Buck Bunny test video
-- [x] Player package builds independently (ESM: 8KB, UMD: 6KB, CSS: 1.8KB)
 
-### Phase 2: Advanced Controls
-- [ ] Not started
+### Phase 2: Advanced Controls (2026-03-27) ✅
+- [x] `useMediaQuery` hook - window.matchMedia wrapper for touch detection
+- [x] `useFullscreen` hook - Fullscreen API on container div (keeps custom controls)
+- [x] `useControlsVisibility` hook - desktop hover/3s hide, mobile tap toggle, always visible when paused
+- [x] VolumeControl - 3-state icon (muted/low/high), expandable slider on hover
+- [x] FullscreenButton - enter/exit toggle with SVG icons
+- [x] PlaybackSpeedSelector - 7 speed options (0.5x~2x) with active highlight
+- [x] SubtitleToggle - on/off switch with toggle animation
+- [x] SettingsMenu - gear icon dropdown with speed + subtitle controls, outside click to close
+- [x] ControlBar layout updated - 2-row (progress top, controls bottom)
+- [x] Responsive CSS - mobile: 44px touch targets, hidden volume slider, bottom sheet settings
+- [x] Public API exports updated with new hooks
 
 ### Phase 3: Video List Page + Routing
 - [ ] Not started
@@ -55,4 +67,7 @@
 | 2026-03-27 | Service factory pattern | Clean swap between mock and Strapi via env var |
 | 2026-03-27 | TDD approach | All features require tests first (Red-Green-Refactor) |
 | 2026-03-27 | React 19 unified | Avoid duplicate React instances across workspaces |
-| 2026-03-27 | Source import for dev | apps/web imports player source directly for HMR during dev |
+| 2026-03-27 | Source import for dev | Vite alias resolves @videoplayer/core to source for HMR |
+| 2026-03-27 | pointer: coarse media query | Detect touch vs mouse by input method, not viewport width |
+| 2026-03-27 | Fullscreen on container div | Custom controls persist in fullscreen mode |
+| 2026-03-27 | 2-row ControlBar layout | Progress bar on top row for better UX, controls on bottom row |

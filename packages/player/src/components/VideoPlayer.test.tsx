@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { VideoPlayer } from './VideoPlayer';
+
+beforeEach(() => {
+  vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })));
+});
 
 describe('VideoPlayer', () => {
   it('renders a video element with the given src', () => {
@@ -28,7 +37,7 @@ describe('VideoPlayer', () => {
 
   it('renders progress bar', () => {
     render(<VideoPlayer src="https://example.com/video.mp4" />);
-    expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: /video progress/i })).toBeInTheDocument();
   });
 
   it('renders time display', () => {
@@ -46,5 +55,21 @@ describe('VideoPlayer', () => {
   it('sets poster attribute when provided', () => {
     render(<VideoPlayer src="https://example.com/video.mp4" poster="https://example.com/poster.jpg" />);
     expect(screen.getByTestId('video-element')).toHaveAttribute('poster', 'https://example.com/poster.jpg');
+  });
+
+  it('renders volume control', () => {
+    render(<VideoPlayer src="https://example.com/video.mp4" />);
+    expect(screen.getByRole('button', { name: /volume/i })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: /volume/i })).toBeInTheDocument();
+  });
+
+  it('renders settings button', () => {
+    render(<VideoPlayer src="https://example.com/video.mp4" />);
+    expect(screen.getByRole('button', { name: /settings/i })).toBeInTheDocument();
+  });
+
+  it('renders fullscreen button', () => {
+    render(<VideoPlayer src="https://example.com/video.mp4" />);
+    expect(screen.getByRole('button', { name: /fullscreen/i })).toBeInTheDocument();
   });
 });

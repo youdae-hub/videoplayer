@@ -3,28 +3,72 @@ import { PlayPauseButton } from './PlayPauseButton';
 import { SkipButton } from './SkipButton';
 import { ProgressBar } from './ProgressBar';
 import { TimeDisplay } from './TimeDisplay';
+import { VolumeControl } from './VolumeControl';
+import { SettingsMenu } from './SettingsMenu';
+import { FullscreenButton } from './FullscreenButton';
 import styles from '../styles/player.module.css';
 
 interface ControlBarProps {
   state: PlaybackState;
+  visible: boolean;
   onTogglePlay: () => void;
   onSkip: (seconds: number) => void;
   onSeek: (time: number) => void;
+  onVolumeChange: (volume: number) => void;
+  onToggleMute: () => void;
+  onSpeedChange: (speed: number) => void;
+  onSubtitleToggle: () => void;
+  onToggleFullscreen: () => void;
 }
 
-export function ControlBar({ state, onTogglePlay, onSkip, onSeek }: ControlBarProps) {
+export function ControlBar({
+  state,
+  visible,
+  onTogglePlay,
+  onSkip,
+  onSeek,
+  onVolumeChange,
+  onToggleMute,
+  onSpeedChange,
+  onSubtitleToggle,
+  onToggleFullscreen,
+}: ControlBarProps) {
   return (
-    <div className={styles.controlBar} data-testid="control-bar">
-      <SkipButton seconds={-10} onClick={() => onSkip(-10)} />
-      <PlayPauseButton isPlaying={state.isPlaying} onClick={onTogglePlay} />
-      <SkipButton seconds={10} onClick={() => onSkip(10)} />
-      <TimeDisplay currentTime={state.currentTime} duration={state.duration} />
-      <ProgressBar
-        currentTime={state.currentTime}
-        duration={state.duration}
-        buffered={state.buffered}
-        onSeek={onSeek}
-      />
+    <div
+      className={`${styles.controlBar} ${!visible ? styles.hidden : ''}`}
+      data-testid="control-bar"
+    >
+      <div className={styles.controlBarTop}>
+        <ProgressBar
+          currentTime={state.currentTime}
+          duration={state.duration}
+          buffered={state.buffered}
+          onSeek={onSeek}
+        />
+      </div>
+      <div className={styles.controlBarBottom}>
+        <PlayPauseButton isPlaying={state.isPlaying} onClick={onTogglePlay} />
+        <SkipButton seconds={-10} onClick={() => onSkip(-10)} />
+        <SkipButton seconds={10} onClick={() => onSkip(10)} />
+        <VolumeControl
+          volume={state.volume}
+          isMuted={state.isMuted}
+          onVolumeChange={onVolumeChange}
+          onToggleMute={onToggleMute}
+        />
+        <TimeDisplay currentTime={state.currentTime} duration={state.duration} />
+        <div className={styles.spacer} />
+        <SettingsMenu
+          playbackSpeed={state.playbackSpeed}
+          subtitlesEnabled={state.subtitlesEnabled}
+          onSpeedChange={onSpeedChange}
+          onSubtitleToggle={onSubtitleToggle}
+        />
+        <FullscreenButton
+          isFullscreen={state.isFullscreen}
+          onToggle={onToggleFullscreen}
+        />
+      </div>
     </div>
   );
 }

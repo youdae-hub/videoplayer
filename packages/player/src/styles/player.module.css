@@ -15,26 +15,44 @@
   display: block;
   object-fit: contain;
   background: #000;
+  cursor: pointer;
 }
 
+/* Control Bar */
 .controlBar {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  flex-direction: column;
+  padding: 0 12px 8px;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .controlBar.hidden {
   opacity: 0;
   pointer-events: none;
+  transform: translateY(4px);
 }
 
+.controlBarTop {
+  width: 100%;
+  padding: 0 0 4px;
+}
+
+.controlBarBottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* Buttons */
 .controlButton {
   display: flex;
   align-items: center;
@@ -47,6 +65,7 @@
   cursor: pointer;
   border-radius: 50%;
   padding: 0;
+  flex-shrink: 0;
   transition: background-color 0.2s;
 }
 
@@ -60,11 +79,12 @@
   fill: currentColor;
 }
 
+/* Progress Bar */
 .progressWrapper {
   flex: 1;
   display: flex;
   align-items: center;
-  height: 36px;
+  height: 20px;
   cursor: pointer;
 }
 
@@ -74,7 +94,7 @@
   height: 4px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
-  overflow: hidden;
+  transition: height 0.15s ease;
 }
 
 .progressTrack:hover {
@@ -110,7 +130,7 @@
   border-radius: 50%;
   transform: translate(-50%, -50%);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
   pointer-events: none;
 }
 
@@ -118,10 +138,185 @@
   opacity: 1;
 }
 
+/* Time Display */
 .timeDisplay {
   color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
   font-family: 'SF Mono', 'Fira Code', monospace;
   white-space: nowrap;
   min-width: fit-content;
+  padding: 0 4px;
+}
+
+/* Volume Control */
+.volumeWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.volumeSlider {
+  width: 0;
+  opacity: 0;
+  transition: width 0.2s ease, opacity 0.2s ease;
+  appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.volumeWrapper:hover .volumeSlider {
+  width: 80px;
+  opacity: 1;
+}
+
+.volumeSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.volumeSlider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+/* Settings */
+.settingsWrapper {
+  position: relative;
+}
+
+.settingsDropdown {
+  position: absolute;
+  bottom: 44px;
+  right: 0;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.settingsLabel {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 16px 4px;
+}
+
+.settingsItem {
+  display: block;
+  width: 100%;
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.settingsItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.settingsItem[data-active="true"] {
+  color: #e50914;
+  font-weight: 600;
+}
+
+.settingsDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 6px 0;
+}
+
+.speedList {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtitle Toggle */
+.subtitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+}
+
+.toggleSwitch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 11px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s;
+}
+
+.toggleOn {
+  background: #e50914;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  pointer-events: none;
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(18px);
+}
+
+/* Mobile: larger touch targets */
+@media (pointer: coarse) {
+  .controlButton {
+    width: 44px;
+    height: 44px;
+  }
+
+  .controlButton svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .volumeSlider {
+    display: none;
+  }
+
+  .volumeWrapper:hover .volumeSlider {
+    display: none;
+  }
+
+  .settingsDropdown {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    min-width: auto;
+    padding: 16px 0;
+  }
 }

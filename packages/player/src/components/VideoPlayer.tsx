@@ -1,10 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import type { VideoPlayerProps } from '../types';
 import { useVideoPlayer } from '../hooks/useVideoPlayer';
+import { useFullscreen } from '../hooks/useFullscreen';
+import { useControlsVisibility } from '../hooks/useControlsVisibility';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ControlBar } from './ControlBar';
 import styles from '../styles/player.module.css';
 
 export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: VideoPlayerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isTouchDevice = useMediaQuery('(pointer: coarse)');
   const {
     videoRef,
     state,
@@ -13,7 +18,18 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
     skip,
     handleTimeUpdate,
     handleLoadedMetadata,
+    setVolume,
+    toggleMute,
+    setPlaybackSpeed,
   } = useVideoPlayer();
+
+  const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
+  const { visible, onPointerMove, onPointerLeave, onContainerClick } = useControlsVisibility({
+    isPlaying: state.isPlaying,
+    isTouchDevice,
+  });
+
+  const fullState = { ...state, isFullscreen };
 
   const onTimeUpdate = useCallback(() => {
     if (videoRef.current) {
@@ -27,8 +43,26 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
     }
   }, [videoRef, handleLoadedMetadata]);
 
+  const handleVideoClick = useCallback(() => {
+    if (isTouchDevice) {
+      onContainerClick();
+    } else {
+      togglePlay();
+    }
+  }, [isTouchDevice, onContainerClick, togglePlay]);
+
+  const handleSubtitleToggle = useCallback(() => {
+    // Subtitle toggle placeholder for Phase 2
+    // Full subtitle overlay will use textTracks API
+  }, []);
+
   return (
-    <div className={`${styles.playerContainer}${className ? ` ${className}` : ''}`}>
+    <div
+      ref={containerRef}
+      className={`${styles.playerContainer}${className ? ` ${className}` : ''}`}
+      onMouseMove={onPointerMove}
+      onMouseLeave={onPointerLeave}
+    >
       <video
         ref={videoRef}
         className={styles.video}
@@ -37,7 +71,7 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
         autoPlay={autoPlay}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
-        onClick={togglePlay}
+        onClick={handleVideoClick}
         data-testid="video-element"
       >
         {subtitles?.map((sub) => (
@@ -51,10 +85,16 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
         ))}
       </video>
       <ControlBar
-        state={state}
+        state={fullState}
+        visible={visible}
         onTogglePlay={togglePlay}
         onSkip={skip}
         onSeek={seek}
+        onVolumeChange={setVolume}
+        onToggleMute={toggleMute}
+        onSpeedChange={setPlaybackSpeed}
+        onSubtitleToggle={handleSubtitleToggle}
+        onToggleFullscreen={toggleFullscreen}
       />
     </div>
   );
