@@ -152,4 +152,32 @@ describe('useVideoPlayer', () => {
     expect(result.current.state.playbackSpeed).toBe(1.5);
     expect(mockVideo.playbackRate).toBe(1.5);
   });
+
+  it('toggles subtitles on and off', () => {
+    const { result } = renderHook(() => useVideoPlayer());
+
+    expect(result.current.state.subtitlesEnabled).toBe(false);
+
+    act(() => { result.current.toggleSubtitles(); });
+    expect(result.current.state.subtitlesEnabled).toBe(true);
+
+    act(() => { result.current.toggleSubtitles(); });
+    expect(result.current.state.subtitlesEnabled).toBe(false);
+  });
+
+  it('sets text track mode when toggling subtitles', () => {
+    const { result } = renderHook(() => useVideoPlayer());
+    const track = { mode: 'hidden' };
+    const mockWithTracks = {
+      ...mockVideo,
+      textTracks: { length: 1, 0: track },
+    } as unknown as HTMLVideoElement;
+    (result.current.videoRef as { current: HTMLVideoElement | null }).current = mockWithTracks;
+
+    act(() => { result.current.toggleSubtitles(); });
+    expect(track.mode).toBe('showing');
+
+    act(() => { result.current.toggleSubtitles(); });
+    expect(track.mode).toBe('hidden');
+  });
 });
