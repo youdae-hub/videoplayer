@@ -1,4 +1,4 @@
-import { VideoPlayer } from '@videoplayer/core/src/index';
+import { VideoPlayer } from '@videoplayer/core';
 
 const SAMPLE_VIDEO = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
 const SAMPLE_POSTER = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg';
