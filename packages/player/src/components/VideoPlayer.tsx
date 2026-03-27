@@ -30,6 +30,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     setVolume,
     toggleMute,
     setPlaybackSpeed,
+    toggleSubtitles,
   } = useVideoPlayer();
 
   const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
@@ -38,15 +39,13 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     isTouchDevice,
   });
 
-  const handleSubtitleToggle = useCallback(() => {}, []);
-
   useKeyboardShortcuts(containerRef, {
     togglePlay,
     skip,
     setVolume,
     toggleMute,
     toggleFullscreen,
-    toggleSubtitles: handleSubtitleToggle,
+    toggleSubtitles,
     volume: state.volume,
   });
 
@@ -69,6 +68,9 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
     if (videoRef.current) {
       handleLoadedMetadata(videoRef.current.duration);
       setError(null);
+      for (let i = 0; i < videoRef.current.textTracks.length; i++) {
+        videoRef.current.textTracks[i].mode = 'hidden';
+      }
     }
   }, [videoRef, handleLoadedMetadata]);
 
@@ -145,7 +147,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
           onVolumeChange={setVolume}
           onToggleMute={toggleMute}
           onSpeedChange={setPlaybackSpeed}
-          onSubtitleToggle={handleSubtitleToggle}
+          onSubtitleToggle={toggleSubtitles}
           onToggleFullscreen={toggleFullscreen}
         />
       )}

@@ -10,7 +10,8 @@ type Action =
   | { type: 'LOADED_METADATA'; payload: number }
   | { type: 'SET_VOLUME'; payload: number }
   | { type: 'TOGGLE_MUTE' }
-  | { type: 'SET_PLAYBACK_SPEED'; payload: number };
+  | { type: 'SET_PLAYBACK_SPEED'; payload: number }
+  | { type: 'TOGGLE_SUBTITLES' };
 
 const initialState: PlaybackState = {
   isPlaying: false,
@@ -51,6 +52,8 @@ function reducer(state: PlaybackState, action: Action): PlaybackState {
       return { ...state, isMuted: !state.isMuted };
     case 'SET_PLAYBACK_SPEED':
       return { ...state, playbackSpeed: action.payload };
+    case 'TOGGLE_SUBTITLES':
+      return { ...state, subtitlesEnabled: !state.subtitlesEnabled };
     default:
       return state;
   }
@@ -112,6 +115,17 @@ export function useVideoPlayer() {
     dispatch({ type: 'SET_PLAYBACK_SPEED', payload: speed });
   }, []);
 
+  const toggleSubtitles = useCallback(() => {
+    const video = videoRef.current;
+    if (video && video.textTracks.length > 0) {
+      const newMode = state.subtitlesEnabled ? 'hidden' : 'showing';
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].mode = newMode;
+      }
+    }
+    dispatch({ type: 'TOGGLE_SUBTITLES' });
+  }, [state.subtitlesEnabled]);
+
   return {
     videoRef,
     state,
@@ -123,5 +137,6 @@ export function useVideoPlayer() {
     setVolume,
     toggleMute,
     setPlaybackSpeed,
+    toggleSubtitles,
   };
 }

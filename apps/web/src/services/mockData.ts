@@ -8,7 +8,10 @@ export const mockVideos: Video[] = [
     thumbnailUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
     videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     duration: 596,
-    subtitles: [],
+    subtitles: [
+      { id: 'sub-ko', label: '한국어', language: 'ko', src: '/subs/bbb-ko.vtt' },
+      { id: 'sub-en', label: 'English', language: 'en', src: '/subs/bbb-en.vtt' },
+    ],
     createdAt: '2026-01-15T09:00:00Z',
     updatedAt: '2026-01-15T09:00:00Z',
   },
