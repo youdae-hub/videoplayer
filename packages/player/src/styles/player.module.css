@@ -1,0 +1,127 @@
+.playerContainer {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  user-select: none;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: #000;
+}
+
+.controlBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  transition: opacity 0.3s ease;
+}
+
+.controlBar.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.controlButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+  transition: background-color 0.2s;
+}
+
+.controlButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.controlButton svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.progressWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  cursor: pointer;
+}
+
+.progressTrack {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressTrack:hover {
+  height: 6px;
+}
+
+.progressBuffered {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.progressFilled {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #e50914;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.progressThumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: #e50914;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.progressTrack:hover .progressThumb {
+  opacity: 1;
+}
+
+.timeDisplay {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: nowrap;
+  min-width: fit-content;
+}
