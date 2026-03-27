@@ -69,16 +69,17 @@ import { VideoPlayer } from '@videoplayer/core';
 - [x] Update ControlBar layout (2-row: progress top, controls bottom, responsive)
 - [x] Mobile CSS: larger touch targets (44px), hidden volume slider, bottom sheet settings
 
-### Phase 3: Video List Page + Routing
-- [ ] React Router v6 setup (/, /video/:id, /cms)
-- [ ] Service interface: VideoService (getVideos, getVideoById)
-- [ ] Mock data service with simulated delay
-- [ ] VideoCard component (thumbnail, duration badge, title)
-- [ ] VideoListGrid component (responsive grid)
-- [ ] Header + PageLayout components
-- [ ] VideoListPage (loading skeleton)
-- [ ] VideoPlayerPage (back button, video info)
-- [ ] CmsPage placeholder
+### Phase 3: Video List Page + Routing ✅
+- [x] React Router v6 setup (/, /video/:id, /cms)
+- [x] Service interface: VideoService (getVideos, getVideoById)
+- [x] Mock data service with 300ms simulated delay (6 public domain videos)
+- [x] VideoCard component (thumbnail, duration badge, title, hover effects)
+- [x] VideoListGrid component (responsive 1/2/3/4 col grid)
+- [x] Header (sticky, dark, nav links) + PageLayout components
+- [x] VideoListPage (loading skeleton + video grid)
+- [x] VideoPlayerPage (back button, video info, date)
+- [x] CmsPage placeholder (table stub for Phase 4)
+- [x] SkeletonGrid loading component
 
 ### Phase 4: CMS Integration Layer
 - [ ] Strapi service implementation (strapiVideoService.ts)

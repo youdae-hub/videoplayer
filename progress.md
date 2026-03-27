@@ -1,9 +1,9 @@
 # Progress
 
-## Current Status: Phase 2 - Complete ✅
+## Current Status: Phase 3 - Complete ✅
 
 ## Test Results
-- 15 test files, 88 tests passing
+- 19 test files, 104 tests passing
 - Hooks: useVideoPlayer (13), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10)
 - Utils: formatTime (9)
 - Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11)
@@ -47,8 +47,16 @@
 - [x] Responsive CSS - mobile: 44px touch targets, hidden volume slider, bottom sheet settings
 - [x] Public API exports updated with new hooks
 
-### Phase 3: Video List Page + Routing
-- [ ] Not started
+### Phase 3: Video List Page + Routing (2026-03-27) ✅
+- [x] React Router v6 routing (/, /video/:id, /cms)
+- [x] VideoService interface + mock data service (6 videos, 300ms delay)
+- [x] Header (sticky, dark theme) + PageLayout
+- [x] VideoCard (thumbnail, duration badge, hover scale) + VideoListGrid (responsive grid)
+- [x] SkeletonGrid loading component (animate-pulse)
+- [x] VideoListPage (fetch + skeleton → grid)
+- [x] VideoPlayerPage (fetch by id + back link + video info)
+- [x] CmsPage placeholder (table stub)
+- [x] App.tsx routing with BrowserRouter
 
 ### Phase 4: CMS Integration Layer
 - [ ] Not started
