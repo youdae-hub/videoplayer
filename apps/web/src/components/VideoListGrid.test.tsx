@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { VideoListGrid } from './VideoListGrid';
 import type { Video } from '@videoplayer/core';
@@ -44,5 +45,20 @@ describe('VideoListGrid', () => {
       </MemoryRouter>
     );
     expect(screen.getByText(/no videos/i)).toBeInTheDocument();
+  });
+
+  it('renders buttons instead of links when onVideoSelect is provided', () => {
+    render(<VideoListGrid videos={mockVideos} onVideoSelect={vi.fn()} />);
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('calls onVideoSelect with correct video when card is clicked', async () => {
+    const user = userEvent.setup();
+    const onVideoSelect = vi.fn();
+    render(<VideoListGrid videos={mockVideos} onVideoSelect={onVideoSelect} />);
+
+    await user.click(screen.getByText('Video 1'));
+    expect(onVideoSelect).toHaveBeenCalledWith(mockVideos[0]);
   });
 });
