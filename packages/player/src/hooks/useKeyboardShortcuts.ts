@@ -1,0 +1,67 @@
+import { useEffect, useCallback, type RefObject } from 'react';
+
+interface KeyboardShortcutActions {
+  togglePlay: () => void;
+  skip: (seconds: number) => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
+  toggleFullscreen: () => void;
+  toggleSubtitles?: () => void;
+  volume: number;
+}
+
+export function useKeyboardShortcuts(
+  containerRef: RefObject<HTMLDivElement | null>,
+  actions: KeyboardShortcutActions,
+) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          actions.togglePlay();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          actions.skip(-10);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          actions.skip(10);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          actions.setVolume(Math.min(1, actions.volume + 0.1));
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          actions.setVolume(Math.max(0, actions.volume - 0.1));
+          break;
+        case 'f':
+          e.preventDefault();
+          actions.toggleFullscreen();
+          break;
+        case 'm':
+          e.preventDefault();
+          actions.toggleMute();
+          break;
+        case 'c':
+          e.preventDefault();
+          actions.toggleSubtitles?.();
+          break;
+      }
+    },
+    [actions],
+  );
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('keydown', handleKeyDown);
+    return () => container.removeEventListener('keydown', handleKeyDown);
+  }, [containerRef, handleKeyDown]);
+}

@@ -1,15 +1,24 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { VideoPlayerProps } from '../types';
 import { useVideoPlayer } from '../hooks/useVideoPlayer';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { useControlsVisibility } from '../hooks/useControlsVisibility';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useDoubleTap } from '../hooks/useDoubleTap';
 import { ControlBar } from './ControlBar';
+import { BufferingIndicator } from './BufferingIndicator';
+import { ErrorOverlay } from './ErrorOverlay';
+import { DoubleTapOverlay } from './DoubleTapOverlay';
+import { ErrorBoundary } from './ErrorBoundary';
 import styles from '../styles/player.module.css';
 
-export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: VideoPlayerProps) {
+function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
+  const [buffering, setBuffering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const {
     videoRef,
     state,
@@ -29,6 +38,25 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
     isTouchDevice,
   });
 
+  const handleSubtitleToggle = useCallback(() => {}, []);
+
+  useKeyboardShortcuts(containerRef, {
+    togglePlay,
+    skip,
+    setVolume,
+    toggleMute,
+    toggleFullscreen,
+    toggleSubtitles: handleSubtitleToggle,
+    volume: state.volume,
+  });
+
+  const { ripple, handleTap } = useDoubleTap({
+    onDoubleTapLeft: () => skip(-10),
+    onDoubleTapRight: () => skip(10),
+    onSingleTap: onContainerClick,
+    enabled: isTouchDevice,
+  });
+
   const fullState = { ...state, isFullscreen };
 
   const onTimeUpdate = useCallback(() => {
@@ -40,21 +68,31 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
   const onLoadedMetadata = useCallback(() => {
     if (videoRef.current) {
       handleLoadedMetadata(videoRef.current.duration);
+      setError(null);
     }
   }, [videoRef, handleLoadedMetadata]);
 
   const handleVideoClick = useCallback(() => {
-    if (isTouchDevice) {
-      onContainerClick();
-    } else {
+    if (!isTouchDevice) {
       togglePlay();
     }
-  }, [isTouchDevice, onContainerClick, togglePlay]);
+  }, [isTouchDevice, togglePlay]);
 
-  const handleSubtitleToggle = useCallback(() => {
-    // Subtitle toggle placeholder for Phase 2
-    // Full subtitle overlay will use textTracks API
+  const handleWaiting = useCallback(() => setBuffering(true), []);
+  const handleCanPlay = useCallback(() => setBuffering(false), []);
+
+  const handleError = useCallback(() => {
+    setBuffering(false);
+    setError('Failed to load video. Please check the source and try again.');
   }, []);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    const video = videoRef.current;
+    if (video) {
+      video.load();
+    }
+  }, [videoRef]);
 
   return (
     <div
@@ -62,6 +100,9 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
       className={`${styles.playerContainer}${className ? ` ${className}` : ''}`}
       onMouseMove={onPointerMove}
       onMouseLeave={onPointerLeave}
+      tabIndex={0}
+      role="region"
+      aria-label="Video Player"
     >
       <video
         ref={videoRef}
@@ -71,7 +112,11 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
         autoPlay={autoPlay}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
+        onWaiting={handleWaiting}
+        onCanPlay={handleCanPlay}
+        onError={handleError}
         onClick={handleVideoClick}
+        onTouchEnd={isTouchDevice ? handleTap : undefined}
         data-testid="video-element"
       >
         {subtitles?.map((sub) => (
@@ -84,18 +129,34 @@ export function VideoPlayer({ src, poster, subtitles, autoPlay, className }: Vid
           />
         ))}
       </video>
-      <ControlBar
-        state={fullState}
-        visible={visible}
-        onTogglePlay={togglePlay}
-        onSkip={skip}
-        onSeek={seek}
-        onVolumeChange={setVolume}
-        onToggleMute={toggleMute}
-        onSpeedChange={setPlaybackSpeed}
-        onSubtitleToggle={handleSubtitleToggle}
-        onToggleFullscreen={toggleFullscreen}
-      />
+
+      <BufferingIndicator visible={buffering && !error} />
+      <DoubleTapOverlay side={ripple.side} x={ripple.x} y={ripple.y} />
+
+      {error ? (
+        <ErrorOverlay message={error} onRetry={handleRetry} />
+      ) : (
+        <ControlBar
+          state={fullState}
+          visible={visible}
+          onTogglePlay={togglePlay}
+          onSkip={skip}
+          onSeek={seek}
+          onVolumeChange={setVolume}
+          onToggleMute={toggleMute}
+          onSpeedChange={setPlaybackSpeed}
+          onSubtitleToggle={handleSubtitleToggle}
+          onToggleFullscreen={toggleFullscreen}
+        />
+      )}
     </div>
+  );
+}
+
+export function VideoPlayer(props: VideoPlayerProps) {
+  return (
+    <ErrorBoundary>
+      <VideoPlayerInner {...props} />
+    </ErrorBoundary>
   );
 }
