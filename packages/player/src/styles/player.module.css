@@ -291,44 +291,27 @@
   flex-direction: column;
 }
 
-/* Subtitle Toggle */
-.subtitleRow {
+/* Subtitle Selector */
+.subtitleSection {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+}
+
+.subtitleNone {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
   padding: 6px 16px;
 }
 
-.toggleSwitch {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 11px;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: background-color 0.2s;
-}
-
-.toggleOn {
-  background: #e50914;
-}
-
-.toggleThumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  background: #fff;
-  border-radius: 50%;
-  transition: transform 0.2s;
-  pointer-events: none;
-}
-
-.toggleOn .toggleThumb {
-  transform: translateX(18px);
+/* Subtitle Display - override native cue position */
+.video::cue {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 1.1em;
+  font-family: sans-serif;
+  padding: 2px 6px;
+  border-radius: 2px;
+  line-height: 1.4;
 }
 
 /* Buffering Indicator */

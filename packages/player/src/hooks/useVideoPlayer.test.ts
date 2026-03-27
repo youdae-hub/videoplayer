@@ -12,6 +12,7 @@ function createMockVideoElement(): HTMLVideoElement {
     paused: true,
     play: vi.fn().mockResolvedValue(undefined),
     pause: vi.fn(),
+    textTracks: { length: 0 },
   } as unknown as HTMLVideoElement;
 }
 
@@ -30,6 +31,8 @@ describe('useVideoPlayer', () => {
     expect(result.current.state.volume).toBe(1);
     expect(result.current.state.isMuted).toBe(false);
     expect(result.current.state.playbackSpeed).toBe(1);
+    expect(result.current.state.activeSubtitleId).toBeNull();
+    expect(result.current.state.subtitlesEnabled).toBe(false);
   });
 
   it('provides a videoRef', () => {
@@ -153,31 +156,45 @@ describe('useVideoPlayer', () => {
     expect(mockVideo.playbackRate).toBe(1.5);
   });
 
-  it('toggles subtitles on and off', () => {
+  it('sets active subtitle by language', () => {
     const { result } = renderHook(() => useVideoPlayer());
 
-    expect(result.current.state.subtitlesEnabled).toBe(false);
+    act(() => { result.current.setActiveSubtitle('ko'); });
+    expect(result.current.state.activeSubtitleId).toBe('ko');
+    expect(result.current.state.subtitlesEnabled).toBe(true);
+  });
 
-    act(() => { result.current.toggleSubtitles(); });
+  it('disables subtitles when set to null', () => {
+    const { result } = renderHook(() => useVideoPlayer());
+
+    act(() => { result.current.setActiveSubtitle('ko'); });
     expect(result.current.state.subtitlesEnabled).toBe(true);
 
-    act(() => { result.current.toggleSubtitles(); });
+    act(() => { result.current.setActiveSubtitle(null); });
+    expect(result.current.state.activeSubtitleId).toBeNull();
     expect(result.current.state.subtitlesEnabled).toBe(false);
   });
 
-  it('sets text track mode when toggling subtitles', () => {
+  it('sets correct text track mode when selecting subtitle', () => {
     const { result } = renderHook(() => useVideoPlayer());
-    const track = { mode: 'hidden' };
+    const track1 = { mode: 'hidden', language: 'ko', label: '한국어' };
+    const track2 = { mode: 'hidden', language: 'en', label: 'English' };
     const mockWithTracks = {
       ...mockVideo,
-      textTracks: { length: 1, 0: track },
+      textTracks: { length: 2, 0: track1, 1: track2 },
     } as unknown as HTMLVideoElement;
     (result.current.videoRef as { current: HTMLVideoElement | null }).current = mockWithTracks;
 
-    act(() => { result.current.toggleSubtitles(); });
-    expect(track.mode).toBe('showing');
+    act(() => { result.current.setActiveSubtitle('ko'); });
+    expect(track1.mode).toBe('showing');
+    expect(track2.mode).toBe('hidden');
 
-    act(() => { result.current.toggleSubtitles(); });
-    expect(track.mode).toBe('hidden');
+    act(() => { result.current.setActiveSubtitle('en'); });
+    expect(track1.mode).toBe('hidden');
+    expect(track2.mode).toBe('showing');
+
+    act(() => { result.current.setActiveSubtitle(null); });
+    expect(track1.mode).toBe('hidden');
+    expect(track2.mode).toBe('hidden');
   });
 });

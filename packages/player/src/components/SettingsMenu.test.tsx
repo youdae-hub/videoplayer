@@ -3,12 +3,18 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsMenu } from './SettingsMenu';
 
+const subtitles = [
+  { id: 'sub-ko', label: '한국어', language: 'ko', src: '/subs/ko.vtt' },
+  { id: 'sub-en', label: 'English', language: 'en', src: '/subs/en.vtt' },
+];
+
 describe('SettingsMenu', () => {
   const defaultProps = {
     playbackSpeed: 1,
-    subtitlesEnabled: false,
+    subtitles,
+    activeSubtitleId: null as string | null,
     onSpeedChange: vi.fn(),
-    onSubtitleToggle: vi.fn(),
+    onSubtitleSelect: vi.fn(),
   };
 
   it('renders settings button', () => {
@@ -27,7 +33,8 @@ describe('SettingsMenu', () => {
 
     await user.click(screen.getByRole('button', { name: /settings/i }));
     expect(screen.getByText('0.5x')).toBeInTheDocument();
-    expect(screen.getByText(/subtitle/i)).toBeInTheDocument();
+    expect(screen.getByText('한국어')).toBeInTheDocument();
+    expect(screen.getByText('English')).toBeInTheDocument();
   });
 
   it('closes menu on second click', async () => {
@@ -52,13 +59,13 @@ describe('SettingsMenu', () => {
     expect(onSpeedChange).toHaveBeenCalledWith(1.5);
   });
 
-  it('calls onSubtitleToggle when subtitle toggled', async () => {
+  it('calls onSubtitleSelect when subtitle language clicked', async () => {
     const user = userEvent.setup();
-    const onSubtitleToggle = vi.fn();
-    render(<SettingsMenu {...defaultProps} onSubtitleToggle={onSubtitleToggle} />);
+    const onSubtitleSelect = vi.fn();
+    render(<SettingsMenu {...defaultProps} onSubtitleSelect={onSubtitleSelect} />);
 
     await user.click(screen.getByRole('button', { name: /settings/i }));
-    await user.click(screen.getByRole('switch'));
-    expect(onSubtitleToggle).toHaveBeenCalledOnce();
+    await user.click(screen.getByText('한국어'));
+    expect(onSubtitleSelect).toHaveBeenCalledWith('ko');
   });
 });
