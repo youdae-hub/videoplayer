@@ -1,0 +1,28 @@
+{
+  "name": "@videoplayer/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/videoplayer-core.umd.cjs",
+  "module": "./dist/videoplayer-core.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/videoplayer-core.js",
+      "require": "./dist/videoplayer-core.umd.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "dev": "vite build --watch"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {}
+}

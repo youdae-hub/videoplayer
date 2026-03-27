@@ -44,18 +44,18 @@ import { VideoPlayer } from '@videoplayer/core';
 
 ## MVP Phases
 
-### Phase 1: Project Setup + Basic Player
-- [ ] npm workspaces monorepo setup (root, packages/player, apps/web)
-- [ ] Vite + TypeScript + Tailwind config (apps/web)
-- [ ] Vite library mode config (packages/player)
-- [ ] Vitest + React Testing Library setup
-- [ ] Core types: Video, Subtitle, PlaybackState, VideoPlayerProps
-- [ ] `useVideoPlayer` hook (play, pause, seek, skip, time update)
-- [ ] Basic components: VideoPlayer, VideoElement, ControlBar, PlayPauseButton, SkipButton, ProgressBar, TimeDisplay
-- [ ] CSS Modules dark theme styling for player
-- [ ] `formatTime` utility
-- [ ] Public API export via index.ts
-- [ ] Demo page in apps/web with public test video
+### Phase 1: Project Setup + Basic Player ✅
+- [x] npm workspaces monorepo setup (root, packages/player, apps/web)
+- [x] Vite + TypeScript + Tailwind config (apps/web)
+- [x] Vite library mode config (packages/player)
+- [x] Vitest + React Testing Library setup
+- [x] Core types: Video, Subtitle, PlaybackState, VideoPlayerProps
+- [x] `useVideoPlayer` hook (play, pause, seek, skip, time update, volume, mute, speed)
+- [x] Basic components: VideoPlayer, ControlBar, PlayPauseButton, SkipButton, ProgressBar, TimeDisplay
+- [x] CSS Modules dark theme styling for player
+- [x] `formatTime` utility
+- [x] Public API export via index.ts
+- [x] Demo page in apps/web with public test video (Big Buck Bunny)
 
 ### Phase 2: Advanced Controls
 - [ ] `useFullscreen` hook
