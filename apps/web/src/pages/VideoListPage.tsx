@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Video } from '@videoplayer/core';
-import { videoService } from '../services/videoService';
+import { videoService } from '../services/createVideoService';
 import { VideoListGrid } from '../components/VideoListGrid';
 import { SkeletonGrid } from '../components/SkeletonGrid';
 

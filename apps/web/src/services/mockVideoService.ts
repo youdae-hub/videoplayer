@@ -8,7 +8,7 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export const videoService: VideoService = {
+export const mockVideoService: VideoService = {
   async getVideos(page = 1, pageSize = 12): Promise<PaginatedResponse<Video>> {
     await delay(SIMULATED_DELAY);
     const start = (page - 1) * pageSize;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { VideoPlayer } from '@videoplayer/core';
 import type { Video } from '@videoplayer/core';
-import { videoService } from '../services/videoService';
+import { videoService } from '../services/createVideoService';
 
 export function VideoPlayerPage() {
   const { id } = useParams<{ id: string }>();

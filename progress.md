@@ -1,9 +1,9 @@
 # Progress
 
-## Current Status: Phase 3 - Complete ✅
+## Current Status: Phase 4 - Complete ✅
 
 ## Test Results
-- 19 test files, 104 tests passing
+- 24 test files, 124 tests passing
 - Hooks: useVideoPlayer (13), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10)
 - Utils: formatTime (9)
 - Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11)
@@ -58,8 +58,16 @@
 - [x] CmsPage placeholder (table stub)
 - [x] App.tsx routing with BrowserRouter
 
-### Phase 4: CMS Integration Layer
-- [ ] Not started
+### Phase 4: CMS Integration Layer (2026-03-27) ✅
+- [x] `apiClient.ts` - fetch wrapper with base URL, error handling
+- [x] Renamed `videoService.ts` → `mockVideoService.ts`
+- [x] `strapiVideoService.ts` - Strapi REST API with response transformation
+- [x] `createVideoService.ts` - factory pattern with `VITE_API_MODE` env var switching
+- [x] Updated page imports (VideoListPage, VideoPlayerPage) to use service factory
+- [x] Expanded CmsPage - video table with thumbnails, duration, subtitles, actions (edit/delete)
+- [x] `.env.example` with `VITE_API_MODE` and `VITE_STRAPI_URL` configuration
+- [x] Tests: apiClient (4), mockVideoService (5), strapiVideoService (4), createVideoService (2), CmsPage (5)
+- [x] Vite library build verified (ESM 16.6KB, UMD 13KB, CSS 4.35KB)
 
 ### Phase 5: Polish + Accessibility
 - [ ] Not started
