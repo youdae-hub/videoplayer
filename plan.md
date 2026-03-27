@@ -81,13 +81,13 @@ import { VideoPlayer } from '@videoplayer/core';
 - [x] CmsPage placeholder (table stub for Phase 4)
 - [x] SkeletonGrid loading component
 
-### Phase 4: CMS Integration Layer
-- [ ] Strapi service implementation (strapiVideoService.ts)
-- [ ] Service factory with env var switching (VITE_API_MODE)
-- [ ] API client utility (fetch wrapper)
-- [ ] CmsPage with CRUD layout stub
-- [ ] .env.example with configuration docs
-- [ ] Vite library build config for npm publish
+### Phase 4: CMS Integration Layer ✅
+- [x] Strapi service implementation (strapiVideoService.ts)
+- [x] Service factory with env var switching (VITE_API_MODE)
+- [x] API client utility (fetch wrapper)
+- [x] CmsPage with CRUD layout stub
+- [x] .env.example with configuration docs
+- [x] Vite library build config for npm publish
 
 ### Phase 5: Polish + Accessibility
 - [ ] Keyboard shortcuts (Space, Arrow keys, f, m, c)

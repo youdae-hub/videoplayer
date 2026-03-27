@@ -12,7 +12,7 @@ beforeEach(() => {
   })));
 });
 
-vi.mock('../services/videoService', () => ({
+vi.mock('../services/createVideoService', () => ({
   videoService: {
     getVideoById: vi.fn().mockResolvedValue({
       id: '1', title: 'Test Video', description: 'Test description',

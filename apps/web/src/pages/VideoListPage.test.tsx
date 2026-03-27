@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { VideoListPage } from './VideoListPage';
 
-vi.mock('../services/videoService', () => ({
+vi.mock('../services/createVideoService', () => ({
   videoService: {
     getVideos: vi.fn().mockResolvedValue({
       data: [
