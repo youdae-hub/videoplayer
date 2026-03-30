@@ -39,6 +39,7 @@ describe('createStrapiVideoService', () => {
     it('fetches and transforms video list from Strapi', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
+        status: 200,
         json: () => Promise.resolve(strapiListResponse),
       });
 
@@ -59,15 +60,18 @@ describe('createStrapiVideoService', () => {
     it('passes pagination params', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
+        status: 200,
         json: () => Promise.resolve(strapiListResponse),
       });
 
       const service = createStrapiVideoService('http://localhost:1337');
       await service.getVideos(2, 6);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('pagination[page]=2&pagination[pageSize]=6')
+      const calledUrl = mockFetch.mock.calls.find(
+        (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('pagination[page]=2'),
       );
+      expect(calledUrl).toBeDefined();
+      expect(calledUrl![0]).toContain('pagination[page]=2&pagination[pageSize]=6');
     });
   });
 
@@ -79,6 +83,7 @@ describe('createStrapiVideoService', () => {
       };
       mockFetch.mockResolvedValue({
         ok: true,
+        status: 200,
         json: () => Promise.resolve(singleResponse),
       });
 
