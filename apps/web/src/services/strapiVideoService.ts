@@ -1,4 +1,4 @@
-import type { VideoService, PaginatedResponse } from './types';
+import type { VideoService, PaginatedResponse, VideoInput } from './types';
 import type { Video, Subtitle } from '@videoplayer/core';
 import { createApiClient } from './apiClient';
 
@@ -68,10 +68,11 @@ function transformVideo(item: StrapiItem, baseUrl: string): Video {
 export function createStrapiVideoService(baseUrl?: string): VideoService {
   const strapiUrl = baseUrl || import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
   const api = createApiClient({ baseUrl: strapiUrl });
+  const populate = 'populate=thumbnail,video,subtitles.file';
 
   return {
     async getVideos(page = 1, pageSize = 12): Promise<PaginatedResponse<Video>> {
-      const params = `?pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate=thumbnail,video,subtitles.file`;
+      const params = `?pagination[page]=${page}&pagination[pageSize]=${pageSize}&${populate}`;
       const res = await api.get<StrapiResponse<StrapiItem[]>>(`/api/videos${params}`);
 
       return {
@@ -84,9 +85,42 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
     },
 
     async getVideoById(id: string): Promise<Video> {
-      const params = '?populate=thumbnail,video,subtitles.file';
-      const res = await api.get<StrapiResponse<StrapiItem>>(`/api/videos/${id}${params}`);
+      const res = await api.get<StrapiResponse<StrapiItem>>(`/api/videos/${id}?${populate}`);
       return transformVideo(res.data, strapiUrl);
+    },
+
+    async createVideo(input: VideoInput): Promise<Video> {
+      const res = await api.post<StrapiResponse<StrapiItem>>('/api/videos', {
+        data: {
+          title: input.title,
+          description: input.description,
+          duration: input.duration,
+          subtitles: input.subtitles.map((s) => ({
+            label: s.label,
+            language: s.language,
+          })),
+        },
+      });
+      return transformVideo(res.data, strapiUrl);
+    },
+
+    async updateVideo(id: string, input: VideoInput): Promise<Video> {
+      const res = await api.put<StrapiResponse<StrapiItem>>(`/api/videos/${id}`, {
+        data: {
+          title: input.title,
+          description: input.description,
+          duration: input.duration,
+          subtitles: input.subtitles.map((s) => ({
+            label: s.label,
+            language: s.language,
+          })),
+        },
+      });
+      return transformVideo(res.data, strapiUrl);
+    },
+
+    async deleteVideo(id: string): Promise<void> {
+      await api.delete(`/api/videos/${id}`);
     },
   };
 }

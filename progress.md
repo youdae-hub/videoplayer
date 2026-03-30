@@ -3,13 +3,13 @@
 ## Current Status: Post-MVP Improvements
 
 ## Test Results
-- 35 test files, 199 tests passing
+- 37 test files, 228 tests passing
 - Hooks: useVideoPlayer (17), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10), useKeyboardShortcuts (13), useDoubleTap (6)
 - Utils: formatTime (9)
 - Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5), SubtitleSelector (7), KeyboardGuide (5)
-- Services: apiClient (4), mockVideoService (5), strapiVideoService (4), createVideoService (2), CmsPage (5)
-- Pages: VideoListPage (8), VideoPlayerPage (5), VideoListGrid (5), VideoCard (7)
-- New: ViewModeToggle (5), VideoPlayerModal (7)
+- Services: apiClient (7), mockVideoService (9), strapiVideoService (4), createVideoService (2)
+- Pages: CmsPage (11), VideoListPage (8), VideoPlayerPage (5), VideoListGrid (5), VideoCard (7)
+- Components: ViewModeToggle (5), VideoPlayerModal (7), ConfirmDialog (6), VideoFormModal (8)
 
 ## Build Output
 - ESM: 27.50KB | UMD: 21.25KB | CSS: 8.35KB
@@ -103,6 +103,16 @@
 - [x] VideoListGrid onVideoSelect prop passthrough
 - [x] VideoListPage view mode state with localStorage persistence
 - [x] Tests: ViewModeToggle (5), VideoPlayerModal (7), VideoCard (7), VideoListGrid (5), VideoListPage (8)
+
+### Post-MVP: CMS CRUD (2026-03-30)
+- [x] apiClient: post, put, delete methods added
+- [x] VideoService interface: createVideo, updateVideo, deleteVideo
+- [x] mockVideoService: in-memory CUD with resetMockData for tests
+- [x] strapiVideoService: Strapi REST API CUD integration
+- [x] VideoFormModal: add/edit form with subtitle management, validation
+- [x] ConfirmDialog: delete confirmation with loading state
+- [x] CmsPage: full CRUD integration (add button, edit/delete per row, modals)
+- [x] Tests: apiClient (7), mockVideoService (9), CmsPage (11), VideoFormModal (8), ConfirmDialog (6)
 
 ## Decisions Log
 

@@ -16,9 +16,9 @@ function getBaseUrl(options?: ApiClientOptions): string {
 export function createApiClient(options?: ApiClientOptions) {
   const baseUrl = getBaseUrl(options);
 
-  async function request<T>(endpoint: string): Promise<T> {
+  async function request<T>(endpoint: string, init?: RequestInit): Promise<T> {
     const url = `${baseUrl}${endpoint}`;
-    const response = await fetch(url);
+    const response = await fetch(url, init);
 
     if (!response.ok) {
       const error: ApiError = {
@@ -28,8 +28,30 @@ export function createApiClient(options?: ApiClientOptions) {
       throw error;
     }
 
+    if (response.status === 204) return undefined as T;
     return response.json();
   }
 
-  return { get: request };
+  return {
+    get<T>(endpoint: string): Promise<T> {
+      return request<T>(endpoint);
+    },
+    post<T>(endpoint: string, body: unknown): Promise<T> {
+      return request<T>(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    put<T>(endpoint: string, body: unknown): Promise<T> {
+      return request<T>(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    delete<T>(endpoint: string): Promise<T> {
+      return request<T>(endpoint, { method: 'DELETE' });
+    },
+  };
 }
