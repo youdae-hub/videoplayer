@@ -4,6 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { VideoFormModal } from './VideoFormModal';
 import type { Video } from '@videoplayer/core';
 
+vi.mock('../utils/videoFileProcessor', () => ({
+  processVideoFile: vi.fn().mockResolvedValue({
+    file: new File(['data'], 'test.mp4', { type: 'video/mp4' }),
+    videoUrl: 'blob:http://localhost/video-123',
+    thumbnailUrl: 'data:image/jpeg;base64,thumb',
+    duration: 90,
+  }),
+}));
+
 const mockVideo: Video = {
   id: '1',
   title: 'Existing Video',
@@ -35,15 +44,18 @@ describe('VideoFormModal', () => {
     const user = userEvent.setup();
     render(<VideoFormModal onSubmit={vi.fn()} onClose={vi.fn()} />);
 
+    // Switch to URL mode so we can submit without file
+    await user.click(screen.getByText('URL 직접 입력'));
     await user.click(screen.getByText('추가'));
     expect(screen.getByTestId('form-error')).toHaveTextContent('제목과 동영상 URL은 필수입니다.');
   });
 
-  it('calls onSubmit with form data', async () => {
+  it('calls onSubmit with form data via URL mode', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<VideoFormModal onSubmit={onSubmit} onClose={vi.fn()} />);
 
+    await user.click(screen.getByText('URL 직접 입력'));
     await user.type(screen.getByPlaceholderText('동영상 제목'), 'New Video');
     await user.type(screen.getByPlaceholderText('https://example.com/video.mp4'), 'https://test.com/v.mp4');
     await user.click(screen.getByText('추가'));
@@ -98,6 +110,7 @@ describe('VideoFormModal', () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error('fail'));
     render(<VideoFormModal onSubmit={onSubmit} onClose={vi.fn()} />);
 
+    await user.click(screen.getByText('URL 직접 입력'));
     await user.type(screen.getByPlaceholderText('동영상 제목'), 'Test');
     await user.type(screen.getByPlaceholderText('https://example.com/video.mp4'), 'https://x.com/v.mp4');
     await user.click(screen.getByText('추가'));
@@ -105,5 +118,39 @@ describe('VideoFormModal', () => {
     await waitFor(() => {
       expect(screen.getByTestId('form-error')).toHaveTextContent('저장에 실패했습니다.');
     });
+  });
+
+  it('shows file upload / URL toggle in add mode', () => {
+    render(<VideoFormModal onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByText('파일 업로드')).toBeInTheDocument();
+    expect(screen.getByText('URL 직접 입력')).toBeInTheDocument();
+  });
+
+  it('does not show toggle in edit mode', () => {
+    render(<VideoFormModal video={mockVideo} onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.queryByText('파일 업로드')).not.toBeInTheDocument();
+  });
+
+  it('auto-fills fields after file upload', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<VideoFormModal onSubmit={onSubmit} onClose={vi.fn()} />);
+
+    const fileInput = screen.getByTestId('file-input');
+    const file = new File(['video-data'], 'my-video.mp4', { type: 'video/mp4' });
+
+    await user.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('thumbnail-preview')).toBeInTheDocument();
+    });
+
+    // Title auto-filled from filename
+    expect(screen.getByDisplayValue('my-video')).toBeInTheDocument();
+  });
+
+  it('shows file select button in file mode', () => {
+    render(<VideoFormModal onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByText('클릭하여 동영상 파일을 선택하세요')).toBeInTheDocument();
   });
 });

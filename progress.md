@@ -3,13 +3,14 @@
 ## Current Status: Post-MVP Improvements
 
 ## Test Results
-- 37 test files, 228 tests passing
+- 38 test files, 238 tests passing
 - Hooks: useVideoPlayer (17), useMediaQuery (4), useFullscreen (5), useControlsVisibility (10), useKeyboardShortcuts (13), useDoubleTap (6)
 - Utils: formatTime (9)
 - Components: TimeDisplay (3), PlayPauseButton (3), SkipButton (3), ProgressBar (4), VolumeControl (7), FullscreenButton (3), PlaybackSpeedSelector (3), SubtitleToggle (4), SettingsMenu (6), VideoPlayer (11), BufferingIndicator (3), ErrorOverlay (4), DoubleTapOverlay (4), ProgressBarTooltip (4), ErrorBoundary (5), SubtitleSelector (7), KeyboardGuide (5)
+- Utils: videoFileProcessor (6)
 - Services: apiClient (7), mockVideoService (9), strapiVideoService (4), createVideoService (2)
 - Pages: CmsPage (11), VideoListPage (8), VideoPlayerPage (5), VideoListGrid (5), VideoCard (7)
-- Components: ViewModeToggle (5), VideoPlayerModal (7), ConfirmDialog (6), VideoFormModal (8)
+- Components: ViewModeToggle (5), VideoPlayerModal (7), ConfirmDialog (6), VideoFormModal (12)
 
 ## Build Output
 - ESM: 27.50KB | UMD: 21.25KB | CSS: 8.35KB
@@ -113,6 +114,14 @@
 - [x] ConfirmDialog: delete confirmation with loading state
 - [x] CmsPage: full CRUD integration (add button, edit/delete per row, modals)
 - [x] Tests: apiClient (7), mockVideoService (9), CmsPage (11), VideoFormModal (8), ConfirmDialog (6)
+
+### Post-MVP: Video File Upload with Auto Thumbnail/Duration (2026-03-30)
+- [x] videoFileProcessor: createObjectURL, canvas thumbnail capture, duration extraction
+- [x] VideoFormModal: file upload mode with auto-fill (title, URL, thumbnail, duration)
+- [x] Input mode toggle (파일 업로드 / URL 직접 입력)
+- [x] Thumbnail preview with duration display
+- [x] CmsPage: blob URL cleanup on unmount
+- [x] Tests: videoFileProcessor (6), VideoFormModal (12)
 
 ## Decisions Log
 
