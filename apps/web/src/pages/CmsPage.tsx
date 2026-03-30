@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Video } from '@videoplayer/core';
 import { formatTime } from '@videoplayer/core';
 import { videoService } from '../services/createVideoService';
 import type { VideoInput } from '../services/types';
 import { VideoFormModal } from '../components/VideoFormModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { revokeVideoUrl } from '../utils/videoFileProcessor';
 
 export function CmsPage() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -13,6 +14,13 @@ export function CmsPage() {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Video | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const blobUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach(revokeVideoUrl);
+    };
+  }, []);
 
   const loadVideos = useCallback(() => {
     setLoading(true);
@@ -37,6 +45,12 @@ export function CmsPage() {
   }, []);
 
   const handleFormSubmit = useCallback(async (input: VideoInput) => {
+    if (input.videoUrl.startsWith('blob:')) {
+      blobUrlsRef.current.push(input.videoUrl);
+    }
+    if (input.thumbnailUrl.startsWith('data:') || input.thumbnailUrl.startsWith('blob:')) {
+      blobUrlsRef.current.push(input.thumbnailUrl);
+    }
     if (formVideo) {
       await videoService.updateVideo(formVideo.id, input);
     } else {

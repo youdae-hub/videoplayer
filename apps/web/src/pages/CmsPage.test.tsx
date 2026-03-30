@@ -130,6 +130,7 @@ describe('CmsPage', () => {
     render(<CmsPage />);
 
     await user.click(screen.getByText('+ 동영상 추가'));
+    await user.click(screen.getByText('URL 직접 입력'));
     await user.type(screen.getByPlaceholderText('동영상 제목'), 'New Video');
     await user.type(screen.getByPlaceholderText('https://example.com/video.mp4'), 'http://x.com/v.mp4');
     await user.click(screen.getByText('추가'));

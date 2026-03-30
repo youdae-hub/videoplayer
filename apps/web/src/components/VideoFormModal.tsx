@@ -1,6 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Video } from '@videoplayer/core';
+import { formatTime } from '@videoplayer/core';
 import type { VideoInput } from '../services/types';
+import { processVideoFile } from '../utils/videoFileProcessor';
+
+type InputMode = 'file' | 'url';
 
 interface VideoFormModalProps {
   video?: Video;
@@ -24,9 +28,37 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
     video?.subtitles.map((s) => ({ label: s.label, language: s.language, src: s.src })) ?? [],
   );
   const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>(video ? 'url' : 'file');
+  const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!video;
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProcessing(true);
+    setError(null);
+    setFileName(file.name);
+
+    try {
+      const result = await processVideoFile(file);
+      setVideoUrl(result.videoUrl);
+      setThumbnailUrl(result.thumbnailUrl);
+      setDuration(result.duration);
+      if (!title) {
+        setTitle(file.name.replace(/\.[^.]+$/, ''));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '파일 처리에 실패했습니다.');
+      setFileName(null);
+    } finally {
+      setProcessing(false);
+    }
+  }, [title]);
 
   const handleAddSubtitle = useCallback(() => {
     setSubtitles((prev) => [...prev, { label: '', language: '', src: '' }]);
@@ -58,6 +90,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
     }
   };
 
+  const inputClass = 'mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none';
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -79,13 +113,83 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
         )}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {!isEdit && (
+            <div className="flex gap-1 rounded-lg bg-neutral-800 p-1">
+              <button
+                type="button"
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  inputMode === 'file' ? 'bg-neutral-600 text-white' : 'text-neutral-400 hover:text-white'
+                }`}
+                onClick={() => setInputMode('file')}
+              >
+                파일 업로드
+              </button>
+              <button
+                type="button"
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  inputMode === 'url' ? 'bg-neutral-600 text-white' : 'text-neutral-400 hover:text-white'
+                }`}
+                onClick={() => setInputMode('url')}
+              >
+                URL 직접 입력
+              </button>
+            </div>
+          )}
+
+          {inputMode === 'file' && !isEdit && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-400">동영상 파일 *</label>
+              <div className="mt-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  data-testid="file-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={processing}
+                  className="w-full rounded-md border border-dashed border-neutral-600 bg-neutral-800 px-4 py-6 text-sm text-neutral-400 hover:border-blue-500 hover:text-blue-400 transition-colors disabled:opacity-50"
+                >
+                  {processing ? (
+                    <span data-testid="processing-status">썸네일 생성 중...</span>
+                  ) : fileName ? (
+                    <span className="text-green-400">{fileName}</span>
+                  ) : (
+                    '클릭하여 동영상 파일을 선택하세요'
+                  )}
+                </button>
+              </div>
+
+              {thumbnailUrl && !processing && (
+                <div className="mt-3" data-testid="thumbnail-preview">
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">썸네일 미리보기</label>
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="h-20 w-32 rounded object-cover border border-neutral-700"
+                    />
+                    <div className="text-xs text-neutral-400 space-y-1">
+                      <div>재생 시간: <span className="text-white">{formatTime(duration)}</span></div>
+                      {fileName && <div>파일: <span className="text-white">{fileName}</span></div>}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-neutral-400">제목 *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className={inputClass}
               placeholder="동영상 제목"
             />
           </div>
@@ -96,43 +200,47 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none resize-none"
+              className={`${inputClass} resize-none`}
               placeholder="동영상 설명"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-400">동영상 URL *</label>
-            <input
-              type="text"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              className="mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-              placeholder="https://example.com/video.mp4"
-            />
-          </div>
+          {(inputMode === 'url' || isEdit) && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-neutral-400">동영상 URL *</label>
+                <input
+                  type="text"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  className={inputClass}
+                  placeholder="https://example.com/video.mp4"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-400">썸네일 URL</label>
-            <input
-              type="text"
-              value={thumbnailUrl}
-              onChange={(e) => setThumbnailUrl(e.target.value)}
-              className="mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-              placeholder="https://example.com/thumb.jpg"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-400">썸네일 URL</label>
+                <input
+                  type="text"
+                  value={thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
+                  className={inputClass}
+                  placeholder="https://example.com/thumb.jpg"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-400">재생 시간 (초)</label>
-            <input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-              min={0}
-              className="mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-400">재생 시간 (초)</label>
+                <input
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  min={0}
+                  className={inputClass}
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <div className="flex items-center justify-between">
@@ -192,7 +300,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
             <button
               type="submit"
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
-              disabled={loading}
+              disabled={loading || processing}
             >
               {loading ? '저장 중...' : isEdit ? '수정' : '추가'}
             </button>
