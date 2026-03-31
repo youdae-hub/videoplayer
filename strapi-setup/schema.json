@@ -7,9 +7,8 @@
     "displayName": "Video",
     "description": "Video content for the custom video player"
   },
-  "options": {
-    "draftAndPublish": false
-  },
+  "options": {},
+  "pluginOptions": {},
   "attributes": {
     "title": {
       "type": "string",
@@ -19,8 +18,7 @@
       "type": "text"
     },
     "duration": {
-      "type": "integer",
-      "default": 0
+      "type": "integer"
     },
     "thumbnail": {
       "type": "media",
@@ -28,7 +26,7 @@
       "required": false,
       "allowedTypes": ["images"]
     },
-    "video": {
+    "videoFile": {
       "type": "media",
       "multiple": false,
       "required": false,
