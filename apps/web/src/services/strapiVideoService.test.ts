@@ -17,18 +17,14 @@ describe('createStrapiVideoService', () => {
     data: [
       {
         id: 1,
-        attributes: {
-          title: 'Test Video',
-          description: 'A test video',
-          thumbnail: { data: { attributes: { url: '/uploads/thumb.jpg' } } },
-          videoFile: { data: { attributes: { url: '/uploads/video.mp4' } } },
-          duration: 120,
-          subtitles: [
-            { id: 1, label: 'English', language: 'en', file: { url: '/uploads/en.vtt' } },
-          ],
-          createdAt: '2026-01-01T00:00:00Z',
-          updatedAt: '2026-01-01T00:00:00Z',
-        },
+        documentId: 'abc123',
+        title: 'Test Video',
+        description: 'A test video',
+        thumbnail: { id: 3, documentId: 'thumb1', url: '/uploads/thumb.jpg' },
+        videoFile: { id: 4, documentId: 'vid1', url: '/uploads/video.mp4' },
+        duration: 120,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
       },
     ],
     meta: {
@@ -48,12 +44,11 @@ describe('createStrapiVideoService', () => {
       const result = await service.getVideos();
 
       expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('1');
+      expect(result.data[0].id).toBe('abc123');
       expect(result.data[0].title).toBe('Test Video');
       expect(result.data[0].thumbnailUrl).toBe('http://localhost:1337/uploads/thumb.jpg');
       expect(result.data[0].videoUrl).toBe('http://localhost:1337/uploads/video.mp4');
-      expect(result.data[0].subtitles).toHaveLength(1);
-      expect(result.data[0].subtitles[0].src).toBe('http://localhost:1337/uploads/en.vtt');
+      expect(result.data[0].subtitles).toEqual([]);
       expect(result.total).toBe(1);
       expect(result.totalPages).toBe(1);
     });
@@ -89,41 +84,44 @@ describe('createStrapiVideoService', () => {
       });
 
       const service = createStrapiVideoService('http://localhost:1337');
-      const video = await service.getVideoById('1');
+      const video = await service.getVideoById('abc123');
 
-      expect(video.id).toBe('1');
+      expect(video.id).toBe('abc123');
       expect(video.title).toBe('Test Video');
       expect(video.videoUrl).toBe('http://localhost:1337/uploads/video.mp4');
     });
 
-    it('handles video without subtitles', async () => {
-      const noSubsResponse = {
+    it('handles video without media', async () => {
+      const noMediaResponse = {
         data: {
           id: 2,
-          attributes: {
-            ...strapiListResponse.data[0].attributes,
-            subtitles: [],
-          },
+          documentId: 'def456',
+          title: 'No Media',
+          description: '',
+          thumbnail: null,
+          videoFile: null,
+          duration: 0,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
         },
         meta: {},
       };
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(noSubsResponse),
+        json: () => Promise.resolve(noMediaResponse),
       });
 
       const service = createStrapiVideoService('http://localhost:1337');
-      const video = await service.getVideoById('2');
+      const video = await service.getVideoById('def456');
 
+      expect(video.videoUrl).toBe('');
+      expect(video.thumbnailUrl).toBe('');
       expect(video.subtitles).toEqual([]);
     });
   });
 
   describe('createVideo', () => {
     it('uploads files before creating video', async () => {
-      // 1st call: upload video file → returns media id
-      // 2nd call: upload thumbnail → returns media id
-      // 3rd call: POST /api/videos
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
@@ -142,16 +140,14 @@ describe('createStrapiVideoService', () => {
             Promise.resolve({
               data: {
                 id: 1,
-                attributes: {
-                  title: 'New Video',
-                  description: '',
-                  thumbnail: { data: { attributes: { url: '/uploads/thumb.jpg' } } },
-                  videoFile: { data: { attributes: { url: '/uploads/video.mp4' } } },
-                  duration: 60,
-                  subtitles: [],
-                  createdAt: '2026-01-01T00:00:00Z',
-                  updatedAt: '2026-01-01T00:00:00Z',
-                },
+                documentId: 'new123',
+                title: 'New Video',
+                description: '',
+                thumbnail: { id: 11, documentId: 'thumb11', url: '/uploads/thumb.jpg' },
+                videoFile: { id: 10, documentId: 'vid10', url: '/uploads/video.mp4' },
+                duration: 60,
+                createdAt: '2026-01-01T00:00:00Z',
+                updatedAt: '2026-01-01T00:00:00Z',
               },
               meta: {},
             }),
@@ -170,7 +166,6 @@ describe('createStrapiVideoService', () => {
       });
 
       expect(video.title).toBe('New Video');
-      // First two calls are uploads
       expect(mockFetch).toHaveBeenCalledTimes(3);
       const uploadCall = mockFetch.mock.calls[0];
       expect(uploadCall[0]).toBe('http://localhost:1337/api/upload');
@@ -186,16 +181,14 @@ describe('createStrapiVideoService', () => {
           Promise.resolve({
             data: {
               id: 2,
-              attributes: {
-                title: 'URL Video',
-                description: '',
-                thumbnail: { data: null },
-                videoFile: { data: null },
-                duration: 30,
-                subtitles: [],
-                createdAt: '2026-01-01T00:00:00Z',
-                updatedAt: '2026-01-01T00:00:00Z',
-              },
+              documentId: 'url456',
+              title: 'URL Video',
+              description: '',
+              thumbnail: null,
+              videoFile: null,
+              duration: 30,
+              createdAt: '2026-01-01T00:00:00Z',
+              updatedAt: '2026-01-01T00:00:00Z',
             },
             meta: {},
           }),
