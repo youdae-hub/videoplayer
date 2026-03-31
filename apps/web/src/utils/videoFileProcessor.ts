@@ -2,6 +2,7 @@ export interface ProcessedVideoFile {
   file: File;
   videoUrl: string;
   thumbnailUrl: string;
+  thumbnailBlob: Blob;
   duration: number;
 }
 
@@ -49,14 +50,21 @@ export function processVideoFile(file: File): Promise<ProcessedVideoFile> {
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const duration = Math.floor(video.duration);
 
-        cleanup();
-        resolve({
-          file,
-          videoUrl,
-          thumbnailUrl,
-          duration: Math.floor(video.duration),
-        });
+        canvas.toBlob(
+          (blob) => {
+            cleanup();
+            if (!blob) {
+              URL.revokeObjectURL(videoUrl);
+              reject(new Error('썸네일 Blob 생성에 실패했습니다.'));
+              return;
+            }
+            resolve({ file, videoUrl, thumbnailUrl, thumbnailBlob: blob, duration });
+          },
+          'image/jpeg',
+          0.8,
+        );
       } catch {
         cleanup();
         URL.revokeObjectURL(videoUrl);

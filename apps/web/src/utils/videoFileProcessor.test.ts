@@ -37,6 +37,9 @@ describe('processVideoFile', () => {
             drawImage: vi.fn(),
           })),
           toDataURL: vi.fn(() => 'data:image/jpeg;base64,thumbnail'),
+          toBlob: vi.fn((cb: (blob: Blob | null) => void) => {
+            cb(new Blob(['thumb'], { type: 'image/jpeg' }));
+          }),
         } as unknown as HTMLCanvasElement;
       }
       return document.createElement(tag);
@@ -63,6 +66,7 @@ describe('processVideoFile', () => {
     expect(result.file).toBe(file);
     expect(result.videoUrl).toBe('blob:http://localhost/video-123');
     expect(result.thumbnailUrl).toBe('data:image/jpeg;base64,thumbnail');
+    expect(result.thumbnailBlob).toBeInstanceOf(Blob);
     expect(result.duration).toBe(120);
   });
 

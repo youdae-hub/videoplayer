@@ -15,6 +15,8 @@ export interface VideoInput {
   thumbnailUrl: string;
   duration: number;
   subtitles: { label: string; language: string; src: string }[];
+  videoFile?: File;
+  thumbnailBlob?: Blob;
 }
 
 export interface VideoService {

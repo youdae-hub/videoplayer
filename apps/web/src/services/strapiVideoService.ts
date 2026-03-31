@@ -16,8 +16,8 @@ interface StrapiSubtitle {
 interface StrapiVideoAttributes {
   title: string;
   description: string;
-  thumbnail: { data: { attributes: StrapiMedia } };
-  video: { data: { attributes: StrapiMedia } };
+  thumbnail: { data: { attributes: StrapiMedia } | null };
+  video: { data: { attributes: StrapiMedia } | null };
   duration: number;
   subtitles: StrapiSubtitle[];
   createdAt: string;
@@ -41,6 +41,11 @@ interface StrapiItem {
   attributes: StrapiVideoAttributes;
 }
 
+interface StrapiUploadResult {
+  id: number;
+  url: string;
+}
+
 function transformSubtitle(sub: StrapiSubtitle, baseUrl: string): Subtitle {
   return {
     id: String(sub.id),
@@ -56,8 +61,12 @@ function transformVideo(item: StrapiItem, baseUrl: string): Video {
     id: String(item.id),
     title: attributes.title,
     description: attributes.description,
-    thumbnailUrl: `${baseUrl}${attributes.thumbnail.data.attributes.url}`,
-    videoUrl: `${baseUrl}${attributes.video.data.attributes.url}`,
+    thumbnailUrl: attributes.thumbnail?.data?.attributes
+      ? `${baseUrl}${attributes.thumbnail.data.attributes.url}`
+      : '',
+    videoUrl: attributes.video?.data?.attributes
+      ? `${baseUrl}${attributes.video.data.attributes.url}`
+      : '',
     duration: attributes.duration,
     subtitles: (attributes.subtitles || []).map((s) => transformSubtitle(s, baseUrl)),
     createdAt: attributes.createdAt,
@@ -69,6 +78,17 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
   const strapiUrl = baseUrl || import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
   const api = createApiClient({ baseUrl: strapiUrl });
   const populate = 'populate=thumbnail,video,subtitles.file';
+
+  async function uploadFile(file: File | Blob, fileName?: string): Promise<number> {
+    const formData = new FormData();
+    if (file instanceof File) {
+      formData.append('files', file);
+    } else {
+      formData.append('files', file, fileName || 'thumbnail.jpg');
+    }
+    const result = await api.upload<StrapiUploadResult[]>('/api/upload', formData);
+    return result[0].id;
+  }
 
   return {
     async getVideos(page = 1, pageSize = 12): Promise<PaginatedResponse<Video>> {
@@ -90,11 +110,23 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
     },
 
     async createVideo(input: VideoInput): Promise<Video> {
+      let videoMediaId: number | undefined;
+      let thumbnailMediaId: number | undefined;
+
+      if (input.videoFile) {
+        videoMediaId = await uploadFile(input.videoFile);
+      }
+      if (input.thumbnailBlob) {
+        thumbnailMediaId = await uploadFile(input.thumbnailBlob, 'thumbnail.jpg');
+      }
+
       const res = await api.post<StrapiResponse<StrapiItem>>('/api/videos', {
         data: {
           title: input.title,
           description: input.description,
           duration: input.duration,
+          ...(videoMediaId && { video: videoMediaId }),
+          ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
           subtitles: input.subtitles.map((s) => ({
             label: s.label,
             language: s.language,
@@ -105,11 +137,23 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
     },
 
     async updateVideo(id: string, input: VideoInput): Promise<Video> {
+      let videoMediaId: number | undefined;
+      let thumbnailMediaId: number | undefined;
+
+      if (input.videoFile) {
+        videoMediaId = await uploadFile(input.videoFile);
+      }
+      if (input.thumbnailBlob) {
+        thumbnailMediaId = await uploadFile(input.thumbnailBlob, 'thumbnail.jpg');
+      }
+
       const res = await api.put<StrapiResponse<StrapiItem>>(`/api/videos/${id}`, {
         data: {
           title: input.title,
           description: input.description,
           duration: input.duration,
+          ...(videoMediaId && { video: videoMediaId }),
+          ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
           subtitles: input.subtitles.map((s) => ({
             label: s.label,
             language: s.language,

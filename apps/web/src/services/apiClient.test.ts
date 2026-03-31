@@ -114,4 +114,22 @@ describe('createApiClient', () => {
       method: 'DELETE',
     });
   });
+
+  it('uploads FormData without Content-Type header', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve([{ id: 1, url: '/uploads/file.mp4' }]),
+    });
+
+    const client = createApiClient({ baseUrl: 'http://test.com' });
+    const formData = new FormData();
+    formData.append('files', new Blob(['data']), 'test.mp4');
+    await client.upload('/api/upload', formData);
+
+    expect(mockFetch).toHaveBeenCalledWith('http://test.com/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+  });
 });

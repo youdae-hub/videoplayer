@@ -53,5 +53,11 @@ export function createApiClient(options?: ApiClientOptions) {
     delete<T>(endpoint: string): Promise<T> {
       return request<T>(endpoint, { method: 'DELETE' });
     },
+    upload<T>(endpoint: string, formData: FormData): Promise<T> {
+      return request<T>(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
+    },
   };
 }

@@ -5,6 +5,7 @@ describe('createStrapiVideoService', () => {
   const mockFetch = vi.fn();
 
   beforeEach(() => {
+    mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
   });
 
@@ -115,6 +116,103 @@ describe('createStrapiVideoService', () => {
       const video = await service.getVideoById('2');
 
       expect(video.subtitles).toEqual([]);
+    });
+  });
+
+  describe('createVideo', () => {
+    it('uploads files before creating video', async () => {
+      // 1st call: upload video file → returns media id
+      // 2nd call: upload thumbnail → returns media id
+      // 3rd call: POST /api/videos
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve([{ id: 10, url: '/uploads/video.mp4' }]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve([{ id: 11, url: '/uploads/thumb.jpg' }]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              data: {
+                id: 1,
+                attributes: {
+                  title: 'New Video',
+                  description: '',
+                  thumbnail: { data: { attributes: { url: '/uploads/thumb.jpg' } } },
+                  video: { data: { attributes: { url: '/uploads/video.mp4' } } },
+                  duration: 60,
+                  subtitles: [],
+                  createdAt: '2026-01-01T00:00:00Z',
+                  updatedAt: '2026-01-01T00:00:00Z',
+                },
+              },
+              meta: {},
+            }),
+        });
+
+      const service = createStrapiVideoService('http://localhost:1337');
+      const video = await service.createVideo({
+        title: 'New Video',
+        description: '',
+        videoUrl: '',
+        thumbnailUrl: '',
+        duration: 60,
+        subtitles: [],
+        videoFile: new File(['data'], 'video.mp4', { type: 'video/mp4' }),
+        thumbnailBlob: new Blob(['thumb'], { type: 'image/jpeg' }),
+      });
+
+      expect(video.title).toBe('New Video');
+      // First two calls are uploads
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      const uploadCall = mockFetch.mock.calls[0];
+      expect(uploadCall[0]).toBe('http://localhost:1337/api/upload');
+      expect(uploadCall[1].method).toBe('POST');
+      expect(uploadCall[1].body).toBeInstanceOf(FormData);
+    });
+
+    it('creates video without file upload when no files provided', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            data: {
+              id: 2,
+              attributes: {
+                title: 'URL Video',
+                description: '',
+                thumbnail: { data: null },
+                video: { data: null },
+                duration: 30,
+                subtitles: [],
+                createdAt: '2026-01-01T00:00:00Z',
+                updatedAt: '2026-01-01T00:00:00Z',
+              },
+            },
+            meta: {},
+          }),
+      });
+
+      const service = createStrapiVideoService('http://localhost:1337');
+      const video = await service.createVideo({
+        title: 'URL Video',
+        description: '',
+        videoUrl: 'https://example.com/v.mp4',
+        thumbnailUrl: '',
+        duration: 30,
+        subtitles: [],
+      });
+
+      expect(video.title).toBe('URL Video');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
 });
