@@ -1,25 +1,21 @@
 import type { VideoService, PaginatedResponse, VideoInput } from './types';
-import type { Video, Subtitle } from '@videoplayer/core';
+import type { Video } from '@videoplayer/core';
 import { createApiClient } from './apiClient';
 
 interface StrapiMedia {
+  id: number;
+  documentId: string;
   url: string;
 }
 
-interface StrapiSubtitle {
+interface StrapiVideoData {
   id: number;
-  label: string;
-  language: string;
-  file: StrapiMedia;
-}
-
-interface StrapiVideoAttributes {
+  documentId: string;
   title: string;
   description: string;
-  thumbnail: { data: { attributes: StrapiMedia } | null };
-  videoFile: { data: { attributes: StrapiMedia } | null };
+  thumbnail: StrapiMedia | null;
+  videoFile: StrapiMedia | null;
   duration: number;
-  subtitles: StrapiSubtitle[];
   createdAt: string;
   updatedAt: string;
 }
@@ -36,48 +32,29 @@ interface StrapiResponse<T> {
   };
 }
 
-interface StrapiItem {
-  id: number;
-  attributes: StrapiVideoAttributes;
-}
-
 interface StrapiUploadResult {
   id: number;
   url: string;
 }
 
-function transformSubtitle(sub: StrapiSubtitle, baseUrl: string): Subtitle {
+function transformVideo(item: StrapiVideoData, baseUrl: string): Video {
   return {
-    id: String(sub.id),
-    label: sub.label,
-    language: sub.language,
-    src: `${baseUrl}${sub.file.url}`,
-  };
-}
-
-function transformVideo(item: StrapiItem, baseUrl: string): Video {
-  const { attributes } = item;
-  return {
-    id: String(item.id),
-    title: attributes.title,
-    description: attributes.description,
-    thumbnailUrl: attributes.thumbnail?.data?.attributes
-      ? `${baseUrl}${attributes.thumbnail.data.attributes.url}`
-      : '',
-    videoUrl: attributes.videoFile?.data?.attributes
-      ? `${baseUrl}${attributes.videoFile.data.attributes.url}`
-      : '',
-    duration: attributes.duration,
-    subtitles: (attributes.subtitles || []).map((s) => transformSubtitle(s, baseUrl)),
-    createdAt: attributes.createdAt,
-    updatedAt: attributes.updatedAt,
+    id: item.documentId,
+    title: item.title,
+    description: item.description,
+    thumbnailUrl: item.thumbnail ? `${baseUrl}${item.thumbnail.url}` : '',
+    videoUrl: item.videoFile ? `${baseUrl}${item.videoFile.url}` : '',
+    duration: item.duration,
+    subtitles: [],
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
   };
 }
 
 export function createStrapiVideoService(baseUrl?: string): VideoService {
   const strapiUrl = baseUrl || import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
   const api = createApiClient({ baseUrl: strapiUrl });
-  const populate = 'populate=thumbnail,videoFile,subtitles.file';
+  const populate = 'populate=thumbnail,videoFile';
 
   async function uploadFile(file: File | Blob, fileName?: string): Promise<number> {
     const formData = new FormData();
@@ -93,7 +70,7 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
   return {
     async getVideos(page = 1, pageSize = 12): Promise<PaginatedResponse<Video>> {
       const params = `?pagination[page]=${page}&pagination[pageSize]=${pageSize}&${populate}`;
-      const res = await api.get<StrapiResponse<StrapiItem[]>>(`/api/videos${params}`);
+      const res = await api.get<StrapiResponse<StrapiVideoData[]>>(`/api/videos${params}`);
 
       return {
         data: res.data.map((item) => transformVideo(item, strapiUrl)),
@@ -105,7 +82,7 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
     },
 
     async getVideoById(id: string): Promise<Video> {
-      const res = await api.get<StrapiResponse<StrapiItem>>(`/api/videos/${id}?${populate}`);
+      const res = await api.get<StrapiResponse<StrapiVideoData>>(`/api/videos/${id}?${populate}`);
       return transformVideo(res.data, strapiUrl);
     },
 
@@ -120,17 +97,13 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
         thumbnailMediaId = await uploadFile(input.thumbnailBlob, 'thumbnail.jpg');
       }
 
-      const res = await api.post<StrapiResponse<StrapiItem>>('/api/videos', {
+      const res = await api.post<StrapiResponse<StrapiVideoData>>('/api/videos', {
         data: {
           title: input.title,
           description: input.description,
           duration: input.duration,
           ...(videoMediaId && { videoFile: videoMediaId }),
           ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
-          subtitles: input.subtitles.map((s) => ({
-            label: s.label,
-            language: s.language,
-          })),
         },
       });
       return transformVideo(res.data, strapiUrl);
@@ -147,17 +120,13 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
         thumbnailMediaId = await uploadFile(input.thumbnailBlob, 'thumbnail.jpg');
       }
 
-      const res = await api.put<StrapiResponse<StrapiItem>>(`/api/videos/${id}`, {
+      const res = await api.put<StrapiResponse<StrapiVideoData>>(`/api/videos/${id}`, {
         data: {
           title: input.title,
           description: input.description,
           duration: input.duration,
           ...(videoMediaId && { videoFile: videoMediaId }),
           ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
-          subtitles: input.subtitles.map((s) => ({
-            label: s.label,
-            language: s.language,
-          })),
         },
       });
       return transformVideo(res.data, strapiUrl);
