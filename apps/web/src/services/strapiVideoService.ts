@@ -54,7 +54,7 @@ function transformVideo(item: StrapiVideoData, baseUrl: string): Video {
 export function createStrapiVideoService(baseUrl?: string): VideoService {
   const strapiUrl = baseUrl || import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
   const api = createApiClient({ baseUrl: strapiUrl });
-  const populate = 'populate=thumbnail,videoFile';
+  const populate = 'populate=*';
 
   async function uploadFile(file: File | Blob, fileName?: string): Promise<number> {
     const formData = new FormData();
