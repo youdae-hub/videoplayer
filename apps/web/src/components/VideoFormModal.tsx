@@ -32,6 +32,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [error, setError] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<InputMode>(video ? 'url' : 'file');
   const [fileName, setFileName] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!video;
@@ -49,6 +51,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       setVideoUrl(result.videoUrl);
       setThumbnailUrl(result.thumbnailUrl);
       setDuration(result.duration);
+      setVideoFile(file);
+      setThumbnailBlob(result.thumbnailBlob);
       if (!title) {
         setTitle(file.name.replace(/\.[^.]+$/, ''));
       }
@@ -83,7 +87,11 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
     setLoading(true);
     setError(null);
     try {
-      await onSubmit({ title, description, videoUrl, thumbnailUrl, duration, subtitles });
+      await onSubmit({
+        title, description, videoUrl, thumbnailUrl, duration, subtitles,
+        ...(videoFile && { videoFile }),
+        ...(thumbnailBlob && { thumbnailBlob }),
+      });
     } catch {
       setError('저장에 실패했습니다. 다시 시도해주세요.');
       setLoading(false);
