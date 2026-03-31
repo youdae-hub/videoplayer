@@ -17,7 +17,7 @@ interface StrapiVideoAttributes {
   title: string;
   description: string;
   thumbnail: { data: { attributes: StrapiMedia } | null };
-  video: { data: { attributes: StrapiMedia } | null };
+  videoFile: { data: { attributes: StrapiMedia } | null };
   duration: number;
   subtitles: StrapiSubtitle[];
   createdAt: string;
@@ -64,8 +64,8 @@ function transformVideo(item: StrapiItem, baseUrl: string): Video {
     thumbnailUrl: attributes.thumbnail?.data?.attributes
       ? `${baseUrl}${attributes.thumbnail.data.attributes.url}`
       : '',
-    videoUrl: attributes.video?.data?.attributes
-      ? `${baseUrl}${attributes.video.data.attributes.url}`
+    videoUrl: attributes.videoFile?.data?.attributes
+      ? `${baseUrl}${attributes.videoFile.data.attributes.url}`
       : '',
     duration: attributes.duration,
     subtitles: (attributes.subtitles || []).map((s) => transformSubtitle(s, baseUrl)),
@@ -77,7 +77,7 @@ function transformVideo(item: StrapiItem, baseUrl: string): Video {
 export function createStrapiVideoService(baseUrl?: string): VideoService {
   const strapiUrl = baseUrl || import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
   const api = createApiClient({ baseUrl: strapiUrl });
-  const populate = 'populate=thumbnail,video,subtitles.file';
+  const populate = 'populate=thumbnail,videoFile,subtitles.file';
 
   async function uploadFile(file: File | Blob, fileName?: string): Promise<number> {
     const formData = new FormData();
@@ -125,7 +125,7 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
           title: input.title,
           description: input.description,
           duration: input.duration,
-          ...(videoMediaId && { video: videoMediaId }),
+          ...(videoMediaId && { videoFile: videoMediaId }),
           ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
           subtitles: input.subtitles.map((s) => ({
             label: s.label,
@@ -152,7 +152,7 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
           title: input.title,
           description: input.description,
           duration: input.duration,
-          ...(videoMediaId && { video: videoMediaId }),
+          ...(videoMediaId && { videoFile: videoMediaId }),
           ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
           subtitles: input.subtitles.map((s) => ({
             label: s.label,
