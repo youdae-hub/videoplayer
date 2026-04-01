@@ -53,6 +53,7 @@ function transformVideo(item: ServerVideoData, baseUrl: string): Video {
       language: s.language,
       src: `${baseUrl}${s.src}`,
     })),
+    subtitleStatus: item.subtitleStatus as Video['subtitleStatus'],
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
@@ -137,6 +138,10 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
 
     async deleteVideo(id: string): Promise<void> {
       await api.delete(`/api/videos/${id}`);
+    },
+
+    async transcribeVideo(id: string): Promise<void> {
+      await api.post(`/api/videos/${id}/transcribe`, {});
     },
   };
 }

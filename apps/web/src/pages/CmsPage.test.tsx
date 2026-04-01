@@ -8,7 +8,7 @@ const mockGetVideos = vi.fn().mockResolvedValue({
     {
       id: '1', title: 'CMS Video', description: 'Test',
       thumbnailUrl: 'http://example.com/thumb.jpg', videoUrl: 'http://example.com/v.mp4',
-      duration: 120, subtitles: [],
+      duration: 120, subtitles: [], subtitleStatus: 'none',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
   ],
@@ -27,12 +27,15 @@ const mockUpdateVideo = vi.fn().mockResolvedValue({
 
 const mockDeleteVideo = vi.fn().mockResolvedValue(undefined);
 
+const mockTranscribeVideo = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('../services/createVideoService', () => ({
   videoService: {
     getVideos: (...args: unknown[]) => mockGetVideos(...args),
     createVideo: (...args: unknown[]) => mockCreateVideo(...args),
     updateVideo: (...args: unknown[]) => mockUpdateVideo(...args),
     deleteVideo: (...args: unknown[]) => mockDeleteVideo(...args),
+    transcribeVideo: (...args: unknown[]) => mockTranscribeVideo(...args),
   },
 }));
 
@@ -122,6 +125,70 @@ describe('CmsPage', () => {
 
     await waitFor(() => {
       expect(mockDeleteVideo).toHaveBeenCalledWith('1');
+    });
+  });
+
+  it('shows subtitle status badge for none', async () => {
+    render(<CmsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('없음')).toBeInTheDocument();
+    });
+  });
+
+  it('shows processing badge when subtitleStatus is processing', async () => {
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Processing Video', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60, subtitles: [], subtitleStatus: 'processing',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('생성 중...')).toBeInTheDocument();
+    });
+  });
+
+  it('shows completed badge with language label', async () => {
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Completed Video', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60,
+          subtitles: [{ id: 's1', label: 'English', language: 'en', src: '/s.vtt' }],
+          subtitleStatus: 'completed',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('English')).toBeInTheDocument();
+    });
+  });
+
+  it('shows failed badge with retry button', async () => {
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Failed Video', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60, subtitles: [], subtitleStatus: 'failed',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('실패')).toBeInTheDocument();
+      expect(screen.getByText('재시도')).toBeInTheDocument();
     });
   });
 

@@ -25,4 +25,5 @@ export interface VideoService {
   createVideo(input: VideoInput): Promise<Video>;
   updateVideo(id: string, input: VideoInput): Promise<Video>;
   deleteVideo(id: string): Promise<void>;
+  transcribeVideo?(id: string): Promise<void>;
 }
