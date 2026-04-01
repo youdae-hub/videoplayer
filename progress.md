@@ -131,6 +131,16 @@
 - [x] VideoFormModal: File/Blob을 VideoInput에 포함하여 서비스에 전달
 - [x] Tests: apiClient (8), strapiVideoService (6), videoFileProcessor (6)
 
+## TODO: 한국어 STT 고도화
+
+| 우선순위 | 작업 | 효과 | 난이도 |
+|---------|------|------|-------|
+| 1 | 모델 large-v3 + language="ko" 지정 | 정확도 대폭 향상 | 낮음 |
+| 2 | faster-whisper로 교체 (CTranslate2 기반) | 속도 4배, 메모리 절반 | 낮음 |
+| 3 | 맞춤법 후처리 (py-hanspell 또는 LLM 보정) | 오탈자 보정 | 중간 |
+| 4 | 타임스탬프 정밀화 (whisper-timestamped / stable-ts) | 자막 싱크 개선 | 중간 |
+| 5 | 화자 분리 (pyannote-audio) | 대화형 콘텐츠에 유용 | 높음 |
+
 ## Decisions Log
 
 | Date | Decision | Reason |
