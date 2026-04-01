@@ -7,6 +7,19 @@ import { VideoFormModal } from '../components/VideoFormModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
 
+async function downloadSubtitle(src: string, label: string) {
+  const res = await fetch(src);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${label}.vtt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function SubtitleStatusBadge({
   video,
   languages,
@@ -23,19 +36,20 @@ function SubtitleStatusBadge({
 
   const existingLangs = video.subtitles.map((s) => s.language);
   const availableLangs = languages.filter((l) => !existingLangs.includes(l.code));
+  const isTranslating = status === 'processing' && video.subtitles.length > 0;
 
-  if (status === 'processing') {
+  if (status === 'processing' && video.subtitles.length === 0) {
     return (
       <div className="flex items-center gap-1.5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-900/30 px-2.5 py-1 text-xs text-yellow-400">
           <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
-          처리 중...
+          자막 생성 중...
         </span>
       </div>
     );
   }
 
-  if (status === 'completed' && video.subtitles.length > 0) {
+  if ((status === 'completed' || isTranslating) && video.subtitles.length > 0) {
     return (
       <div className="flex flex-col gap-1.5">
         <div className="flex flex-wrap gap-1">
@@ -45,20 +59,27 @@ function SubtitleStatusBadge({
               className="inline-flex items-center gap-1 rounded-full bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-400"
             >
               {s.label}
-              <a
-                href={s.src}
-                download
+              <button
                 className="text-green-600 hover:text-green-300 transition-colors"
                 title={`${s.label} 자막 다운로드`}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadSubtitle(s.src, s.label);
+                }}
               >
                 ↓
-              </a>
+              </button>
             </span>
           ))}
+          {isTranslating && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-900/30 px-2.5 py-0.5 text-xs text-yellow-400">
+              <span className="inline-block h-2 w-2 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
+              번역 중...
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          {videoService.translateVideo && availableLangs.length > 0 && (
+          {videoService.translateVideo && availableLangs.length > 0 && !isTranslating && (
             <div className="relative">
               <button
                 className="rounded-full bg-blue-900/30 px-2.5 py-0.5 text-xs text-blue-400 hover:bg-blue-900/50 transition-colors"
@@ -84,7 +105,7 @@ function SubtitleStatusBadge({
               )}
             </div>
           )}
-          {videoService.transcribeVideo && (
+          {videoService.transcribeVideo && !isTranslating && (
             <button
               className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-neutral-300 transition-colors"
               title="자막 재생성"

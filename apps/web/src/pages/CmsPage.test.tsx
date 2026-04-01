@@ -158,7 +158,28 @@ describe('CmsPage', () => {
     });
     render(<CmsPage />);
     await waitFor(() => {
-      expect(screen.getByText('처리 중...')).toBeInTheDocument();
+      expect(screen.getByText('자막 생성 중...')).toBeInTheDocument();
+    });
+  });
+
+  it('shows translating indicator when processing with existing subtitles', async () => {
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Translating Video', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60,
+          subtitles: [{ id: 's1', label: 'English', language: 'en', src: '/s.vtt' }],
+          subtitleStatus: 'processing',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('English')).toBeInTheDocument();
+      expect(screen.getByText('번역 중...')).toBeInTheDocument();
     });
   });
 
@@ -182,7 +203,7 @@ describe('CmsPage', () => {
     });
   });
 
-  it('shows download link for each subtitle', async () => {
+  it('shows download button for each subtitle', async () => {
     mockGetVideos.mockResolvedValueOnce({
       data: [
         {
@@ -198,10 +219,9 @@ describe('CmsPage', () => {
     });
     render(<CmsPage />);
     await waitFor(() => {
-      const downloadLink = screen.getByTitle('English 자막 다운로드');
-      expect(downloadLink).toBeInTheDocument();
-      expect(downloadLink).toHaveAttribute('href', '/uploads/subtitles/test.vtt');
-      expect(downloadLink).toHaveAttribute('download');
+      const downloadBtn = screen.getByTitle('English 자막 다운로드');
+      expect(downloadBtn).toBeInTheDocument();
+      expect(downloadBtn.tagName).toBe('BUTTON');
     });
   });
 
