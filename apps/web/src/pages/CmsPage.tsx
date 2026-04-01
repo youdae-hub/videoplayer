@@ -7,6 +7,76 @@ import { VideoFormModal } from '../components/VideoFormModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
 
+function SubtitleStatusBadge({
+  video,
+  onTranscribe,
+}: {
+  video: Video;
+  onTranscribe: (id: string) => void;
+}) {
+  const status = video.subtitleStatus || 'none';
+
+  if (status === 'processing') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-yellow-900/30 px-2 py-0.5 text-xs text-yellow-400">
+        <span className="inline-block h-2 w-2 animate-spin rounded-full border border-yellow-400 border-t-transparent" />
+        생성 중...
+      </span>
+    );
+  }
+
+  if (status === 'completed' && video.subtitles.length > 0) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="rounded bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
+          {video.subtitles.map((s) => s.label).join(', ')}
+        </span>
+        {videoService.transcribeVideo && (
+          <button
+            className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+            title="자막 재생성"
+            onClick={() => onTranscribe(video.id)}
+          >
+            ↻
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="rounded bg-red-900/30 px-2 py-0.5 text-xs text-red-400">실패</span>
+        {videoService.transcribeVideo && (
+          <button
+            className="text-xs text-neutral-400 hover:text-white transition-colors"
+            title="자막 재시도"
+            onClick={() => onTranscribe(video.id)}
+          >
+            재시도
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-neutral-600">없음</span>
+      {videoService.transcribeVideo && video.videoUrl && (
+        <button
+          className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          title="자막 생성"
+          onClick={() => onTranscribe(video.id)}
+        >
+          생성
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function CmsPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,10 +85,12 @@ export function CmsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Video | null>(null);
   const [deleting, setDeleting] = useState(false);
   const blobUrlsRef = useRef<string[]>([]);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
       blobUrlsRef.current.forEach(revokeVideoUrl);
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, []);
 
@@ -33,6 +105,28 @@ export function CmsPage() {
   useEffect(() => {
     loadVideos();
   }, [loadVideos]);
+
+  useEffect(() => {
+    const hasProcessing = videos.some((v) => v.subtitleStatus === 'processing');
+
+    if (hasProcessing && !pollingRef.current) {
+      pollingRef.current = setInterval(() => {
+        videoService.getVideos().then((res) => {
+          setVideos(res.data);
+          const stillProcessing = res.data.some((v) => v.subtitleStatus === 'processing');
+          if (!stillProcessing && pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+        });
+      }, 5000);
+    }
+
+    if (!hasProcessing && pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, [videos]);
 
   const handleAdd = useCallback(() => {
     setFormVideo(undefined);
@@ -78,6 +172,14 @@ export function CmsPage() {
     }
   }, [deleteTarget, loadVideos]);
 
+  const handleTranscribe = useCallback(async (videoId: string) => {
+    if (!videoService.transcribeVideo) return;
+    await videoService.transcribeVideo(videoId);
+    loadVideos();
+  }, [loadVideos]);
+
+  const apiMode = import.meta.env.VITE_API_MODE || 'mock';
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -90,7 +192,7 @@ export function CmsPage() {
             + 동영상 추가
           </button>
           <span className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400">
-            {import.meta.env.VITE_API_MODE === 'strapi' ? 'Strapi' : 'Mock'} Mode
+            {apiMode === 'strapi' ? 'Strapi' : apiMode === 'custom' ? 'Custom' : 'Mock'} Mode
           </span>
         </div>
       </div>
@@ -144,13 +246,7 @@ export function CmsPage() {
                   <td className="px-4 py-3 font-medium">{video.title}</td>
                   <td className="px-4 py-3 text-neutral-400">{formatTime(video.duration)}</td>
                   <td className="px-4 py-3 text-neutral-400">
-                    {video.subtitles.length > 0 ? (
-                      <span className="rounded bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
-                        {video.subtitles.length}
-                      </span>
-                    ) : (
-                      <span className="text-neutral-600">None</span>
-                    )}
+                    <SubtitleStatusBadge video={video} onTranscribe={handleTranscribe} />
                   </td>
                   <td className="px-4 py-3 text-neutral-500 text-xs">
                     {new Date(video.updatedAt).toLocaleDateString()}
@@ -181,14 +277,14 @@ export function CmsPage() {
 
         {!loading && videos.length === 0 && (
           <div className="p-8 text-center text-neutral-500">
-            No videos found. Connect Strapi CMS to manage videos.
+            No videos found.
           </div>
         )}
       </div>
 
-      {import.meta.env.VITE_API_MODE !== 'strapi' && (
+      {apiMode === 'mock' && (
         <p className="mt-4 text-xs text-neutral-500">
-          Currently using mock data. Set <code className="rounded bg-neutral-800 px-1">VITE_API_MODE=strapi</code> and <code className="rounded bg-neutral-800 px-1">VITE_STRAPI_URL</code> to connect to Strapi CMS.
+          Currently using mock data. Set <code className="rounded bg-neutral-800 px-1">VITE_API_MODE=custom</code> and <code className="rounded bg-neutral-800 px-1">VITE_SERVER_URL</code> to connect to the CMS server.
         </p>
       )}
 
