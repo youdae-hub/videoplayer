@@ -1,10 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
 import { prisma } from '../db.js';
 
+vi.mock('../services/transcribe.js', () => ({
+  startTranscription: vi.fn(),
+}));
+
+import { startTranscription } from '../services/transcribe.js';
+
 describe('Video API', () => {
   beforeEach(async () => {
+    vi.clearAllMocks();
     await prisma.subtitle.deleteMany();
     await prisma.video.deleteMany();
   });
@@ -70,8 +77,8 @@ describe('Video API', () => {
       expect(res.status).toBe(201);
       expect(res.body.data.title).toBe('New Video');
       expect(res.body.data.description).toBe('A new video');
-      expect(res.body.data.duration).toBe(60);
-      expect(res.body.data.id).toBeDefined();
+      expect(res.body.data.subtitleStatus).toBe('none');
+      expect(startTranscription).not.toHaveBeenCalled();
     });
 
     it('creates video with defaults for optional fields', async () => {
@@ -83,6 +90,20 @@ describe('Video API', () => {
       expect(res.body.data.description).toBe('');
       expect(res.body.data.duration).toBe(0);
       expect(res.body.data.videoUrl).toBe('');
+    });
+
+    it('triggers transcription for uploaded video files', async () => {
+      const res = await request(app).post('/api/videos').send({
+        title: 'Uploaded Video',
+        videoUrl: '/uploads/videos/abc123.mp4',
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.subtitleStatus).toBe('processing');
+      expect(startTranscription).toHaveBeenCalledWith(
+        res.body.data.id,
+        'abc123.mp4',
+      );
     });
   });
 
@@ -126,6 +147,39 @@ describe('Video API', () => {
 
       const subtitles = await prisma.subtitle.findMany({ where: { videoId: video.id } });
       expect(subtitles).toHaveLength(0);
+    });
+  });
+
+  describe('POST /api/videos/:id/transcribe', () => {
+    it('starts transcription for existing video', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'To Transcribe', videoUrl: '/uploads/videos/test.mp4' },
+      });
+
+      const res = await request(app).post(`/api/videos/${video.id}/transcribe`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe('processing');
+      expect(startTranscription).toHaveBeenCalledWith(video.id, 'test.mp4');
+
+      const updated = await prisma.video.findUnique({ where: { id: video.id } });
+      expect(updated?.subtitleStatus).toBe('processing');
+    });
+
+    it('returns 404 for non-existent video', async () => {
+      const res = await request(app).post('/api/videos/non-existent/transcribe');
+
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 400 for video without uploaded file', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'URL Video', videoUrl: 'https://example.com/v.mp4' },
+      });
+
+      const res = await request(app).post(`/api/videos/${video.id}/transcribe`);
+
+      expect(res.status).toBe(400);
     });
   });
 });

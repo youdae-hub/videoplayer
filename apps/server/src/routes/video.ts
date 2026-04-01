@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import path from 'path';
 import { prisma } from '../db.js';
+import { startTranscription } from '../services/transcribe.js';
 
 export const videoRouter = Router();
 
@@ -48,6 +50,8 @@ videoRouter.get('/:id', async (req, res) => {
 videoRouter.post('/', async (req, res) => {
   const { title, description, duration, videoUrl, thumbnailUrl } = req.body;
 
+  const hasUploadedVideo = videoUrl && videoUrl.startsWith('/uploads/videos/');
+
   const video = await prisma.video.create({
     data: {
       title,
@@ -55,9 +59,15 @@ videoRouter.post('/', async (req, res) => {
       duration: duration || 0,
       videoUrl: videoUrl || '',
       thumbnailUrl: thumbnailUrl || '',
+      subtitleStatus: hasUploadedVideo ? 'processing' : 'none',
     },
     include: { subtitles: true },
   });
+
+  if (hasUploadedVideo) {
+    const videoFileName = path.basename(videoUrl);
+    startTranscription(video.id, videoFileName);
+  }
 
   res.status(201).json({ data: video });
 });
@@ -85,4 +95,30 @@ videoRouter.delete('/:id', async (req, res) => {
   await prisma.video.delete({ where: { id: req.params.id } });
 
   res.status(204).send();
+});
+
+videoRouter.post('/:id/transcribe', async (req, res) => {
+  const video = await prisma.video.findUnique({ where: { id: req.params.id } });
+
+  if (!video) {
+    res.status(404).json({ error: 'Video not found' });
+    return;
+  }
+
+  if (!video.videoUrl || !video.videoUrl.startsWith('/uploads/videos/')) {
+    res.status(400).json({ error: 'No uploaded video file to transcribe' });
+    return;
+  }
+
+  await prisma.subtitle.deleteMany({ where: { videoId: video.id } });
+
+  await prisma.video.update({
+    where: { id: video.id },
+    data: { subtitleStatus: 'processing' },
+  });
+
+  const videoFileName = path.basename(video.videoUrl);
+  startTranscription(video.id, videoFileName);
+
+  res.json({ data: { status: 'processing' } });
 });
