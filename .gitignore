@@ -3,3 +3,9 @@ dist
 .env
 .env.local
 *.tsbuildinfo
+*.db
+*.db-journal
+apps/server/uploads/videos/*
+apps/server/uploads/thumbnails/*
+apps/server/uploads/subtitles/*
+!apps/server/uploads/**/.gitkeep
