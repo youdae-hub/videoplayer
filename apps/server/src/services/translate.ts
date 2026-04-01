@@ -50,13 +50,28 @@ export function startTranslation(
         },
       });
 
+      await prisma.video.update({
+        where: { id: videoId },
+        data: { subtitleStatus: 'completed' },
+      });
+
       console.log(`Translation completed for video ${videoId}: ${fromLang} -> ${toLang}`);
     } else {
+      await prisma.video.update({
+        where: { id: videoId },
+        data: { subtitleStatus: 'failed' },
+      });
+
       console.error(`Translation failed for video ${videoId} (${fromLang} -> ${toLang}):`, stderr);
     }
   });
 
-  process.on('error', (err) => {
+  process.on('error', async (err) => {
+    await prisma.video.update({
+      where: { id: videoId },
+      data: { subtitleStatus: 'failed' },
+    });
+
     console.error(`Failed to start translation for video ${videoId}:`, err.message);
   });
 }

@@ -28,6 +28,13 @@ const mockUpdateVideo = vi.fn().mockResolvedValue({
 const mockDeleteVideo = vi.fn().mockResolvedValue(undefined);
 
 const mockTranscribeVideo = vi.fn().mockResolvedValue(undefined);
+const mockTranslateVideo = vi.fn().mockResolvedValue(undefined);
+const mockGetLanguages = vi.fn().mockResolvedValue([
+  { code: 'ko', label: 'Korean', nativeLabel: '한국어' },
+  { code: 'en', label: 'English', nativeLabel: 'English' },
+  { code: 'es', label: 'Spanish', nativeLabel: 'Español' },
+  { code: 'ja', label: 'Japanese', nativeLabel: '日本語' },
+]);
 
 vi.mock('../services/createVideoService', () => ({
   videoService: {
@@ -36,6 +43,8 @@ vi.mock('../services/createVideoService', () => ({
     updateVideo: (...args: unknown[]) => mockUpdateVideo(...args),
     deleteVideo: (...args: unknown[]) => mockDeleteVideo(...args),
     transcribeVideo: (...args: unknown[]) => mockTranscribeVideo(...args),
+    translateVideo: (...args: unknown[]) => mockTranslateVideo(...args),
+    getLanguages: (...args: unknown[]) => mockGetLanguages(...args),
   },
 }));
 
@@ -149,7 +158,7 @@ describe('CmsPage', () => {
     });
     render(<CmsPage />);
     await waitFor(() => {
-      expect(screen.getByText('생성 중...')).toBeInTheDocument();
+      expect(screen.getByText('처리 중...')).toBeInTheDocument();
     });
   });
 
@@ -170,6 +179,78 @@ describe('CmsPage', () => {
     render(<CmsPage />);
     await waitFor(() => {
       expect(screen.getByText('English')).toBeInTheDocument();
+    });
+  });
+
+  it('shows download link for each subtitle', async () => {
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Video with subs', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60,
+          subtitles: [{ id: 's1', label: 'English', language: 'en', src: '/uploads/subtitles/test.vtt' }],
+          subtitleStatus: 'completed',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+    await waitFor(() => {
+      const downloadLink = screen.getByTitle('English 자막 다운로드');
+      expect(downloadLink).toBeInTheDocument();
+      expect(downloadLink).toHaveAttribute('href', '/uploads/subtitles/test.vtt');
+      expect(downloadLink).toHaveAttribute('download');
+    });
+  });
+
+  it('shows translate button when languages are available', async () => {
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Video for translate', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60,
+          subtitles: [{ id: 's1', label: 'English', language: 'en', src: '/s.vtt' }],
+          subtitleStatus: 'completed',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('+ 번역')).toBeInTheDocument();
+    });
+  });
+
+  it('calls translateVideo when a language is selected', async () => {
+    const user = userEvent.setup();
+    mockGetVideos.mockResolvedValueOnce({
+      data: [
+        {
+          id: '1', title: 'Video for translate', description: '',
+          thumbnailUrl: '', videoUrl: '/uploads/videos/v.mp4',
+          duration: 60,
+          subtitles: [{ id: 's1', label: 'English', language: 'en', src: '/s.vtt' }],
+          subtitleStatus: 'completed',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      total: 1, page: 1, pageSize: 12, totalPages: 1,
+    });
+    render(<CmsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('+ 번역')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('+ 번역'));
+    await user.click(screen.getByText('한국어 (Korean)'));
+
+    await waitFor(() => {
+      expect(mockTranslateVideo).toHaveBeenCalledWith('1', 'ko');
     });
   });
 

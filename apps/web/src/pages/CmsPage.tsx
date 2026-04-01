@@ -26,54 +26,74 @@ function SubtitleStatusBadge({
 
   if (status === 'processing') {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-yellow-900/30 px-2 py-0.5 text-xs text-yellow-400">
-        <span className="inline-block h-2 w-2 animate-spin rounded-full border border-yellow-400 border-t-transparent" />
-        생성 중...
-      </span>
+      <div className="flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-900/30 px-2.5 py-1 text-xs text-yellow-400">
+          <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
+          처리 중...
+        </span>
+      </div>
     );
   }
 
   if (status === 'completed' && video.subtitles.length > 0) {
     return (
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="rounded bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
-          {video.subtitles.map((s) => s.label).join(', ')}
-        </span>
-        {videoService.translateVideo && availableLangs.length > 0 && (
-          <div className="relative">
-            <button
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-              onClick={() => setShowLangMenu(!showLangMenu)}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap gap-1">
+          {video.subtitles.map((s) => (
+            <span
+              key={s.id}
+              className="inline-flex items-center gap-1 rounded-full bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-400"
             >
-              + 번역
+              {s.label}
+              <a
+                href={s.src}
+                download
+                className="text-green-600 hover:text-green-300 transition-colors"
+                title={`${s.label} 자막 다운로드`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                ↓
+              </a>
+            </span>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          {videoService.translateVideo && availableLangs.length > 0 && (
+            <div className="relative">
+              <button
+                className="rounded-full bg-blue-900/30 px-2.5 py-0.5 text-xs text-blue-400 hover:bg-blue-900/50 transition-colors"
+                onClick={() => setShowLangMenu(!showLangMenu)}
+              >
+                + 번역
+              </button>
+              {showLangMenu && (
+                <div className="absolute left-0 top-7 z-10 min-w-[120px] rounded-lg border border-neutral-700 bg-neutral-800 py-1 shadow-xl">
+                  {availableLangs.map((lang) => (
+                    <button
+                      key={lang.code}
+                      className="block w-full px-4 py-2 text-left text-xs text-neutral-300 hover:bg-neutral-700 transition-colors"
+                      onClick={() => {
+                        onTranslate(video.id, lang.code);
+                        setShowLangMenu(false);
+                      }}
+                    >
+                      {lang.nativeLabel} ({lang.label})
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {videoService.transcribeVideo && (
+            <button
+              className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-neutral-300 transition-colors"
+              title="자막 재생성"
+              onClick={() => onTranscribe(video.id)}
+            >
+              ↻
             </button>
-            {showLangMenu && (
-              <div className="absolute left-0 top-6 z-10 rounded border border-neutral-700 bg-neutral-800 py-1 shadow-lg">
-                {availableLangs.map((lang) => (
-                  <button
-                    key={lang.code}
-                    className="block w-full px-4 py-1.5 text-left text-xs text-neutral-300 hover:bg-neutral-700"
-                    onClick={() => {
-                      onTranslate(video.id, lang.code);
-                      setShowLangMenu(false);
-                    }}
-                  >
-                    {lang.nativeLabel}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        {videoService.transcribeVideo && (
-          <button
-            className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-            title="자막 재생성"
-            onClick={() => onTranscribe(video.id)}
-          >
-            ↻
-          </button>
-        )}
+          )}
+        </div>
       </div>
     );
   }
@@ -81,10 +101,10 @@ function SubtitleStatusBadge({
   if (status === 'failed') {
     return (
       <div className="flex items-center gap-2">
-        <span className="rounded bg-red-900/30 px-2 py-0.5 text-xs text-red-400">실패</span>
+        <span className="rounded-full bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-400">실패</span>
         {videoService.transcribeVideo && (
           <button
-            className="text-xs text-neutral-400 hover:text-white transition-colors"
+            className="rounded-full bg-red-900/20 px-2.5 py-1 text-xs text-red-400 hover:bg-red-900/40 transition-colors"
             title="자막 재시도"
             onClick={() => onTranscribe(video.id)}
           >
@@ -97,14 +117,14 @@ function SubtitleStatusBadge({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-neutral-600">없음</span>
+      <span className="text-xs text-neutral-600">없음</span>
       {videoService.transcribeVideo && video.videoUrl && (
         <button
-          className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          className="rounded-full bg-blue-900/30 px-2.5 py-0.5 text-xs text-blue-400 hover:bg-blue-900/50 transition-colors"
           title="자막 생성"
           onClick={() => onTranscribe(video.id)}
         >
-          생성
+          자막 생성
         </button>
       )}
     </div>
@@ -246,14 +266,14 @@ export function CmsPage() {
 
       <div className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900">
         <table className="w-full text-left text-sm">
-          <thead className="bg-neutral-800 text-neutral-400">
+          <thead className="bg-neutral-800 text-neutral-400 text-xs uppercase tracking-wider">
             <tr>
-              <th className="px-4 py-3 font-medium">Thumbnail</th>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Duration</th>
-              <th className="px-4 py-3 font-medium">Subtitles</th>
-              <th className="px-4 py-3 font-medium">Updated</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+              <th className="px-4 py-3 font-semibold w-20">Thumbnail</th>
+              <th className="px-4 py-3 font-semibold">Title</th>
+              <th className="px-4 py-3 font-semibold w-20 text-center">Duration</th>
+              <th className="px-4 py-3 font-semibold w-52">Subtitles</th>
+              <th className="px-4 py-3 font-semibold w-24 text-center">Updated</th>
+              <th className="px-4 py-3 font-semibold w-28 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -287,28 +307,32 @@ export function CmsPage() {
                     <img
                       src={video.thumbnailUrl}
                       alt={video.title}
-                      className="h-10 w-16 rounded object-cover"
+                      className="h-12 w-20 rounded-md object-cover bg-neutral-800"
                     />
                   </td>
-                  <td className="px-4 py-3 font-medium">{video.title}</td>
-                  <td className="px-4 py-3 text-neutral-400">{formatTime(video.duration)}</td>
-                  <td className="px-4 py-3 text-neutral-400">
-                    <SubtitleStatusBadge video={video} languages={languages} onTranscribe={handleTranscribe} onTranslate={handleTranslate} />
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-sm line-clamp-2">{video.title}</span>
                   </td>
-                  <td className="px-4 py-3 text-neutral-500 text-xs">
-                    {new Date(video.updatedAt).toLocaleDateString()}
+                  <td className="px-4 py-3 text-center">
+                    <span className="text-xs text-neutral-400 tabular-nums">{formatTime(video.duration)}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <SubtitleStatusBadge video={video} languages={languages} onTranscribe={handleTranscribe} onTranslate={handleTranslate} />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="text-xs text-neutral-500">{new Date(video.updatedAt).toLocaleDateString()}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center gap-1">
                       <button
-                        className="rounded px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-white"
+                        className="rounded-md px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-neutral-700 hover:text-white"
                         title="Edit"
                         onClick={() => handleEdit(video)}
                       >
                         Edit
                       </button>
                       <button
-                        className="rounded px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-900/30 hover:text-red-300"
+                        className="rounded-md px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-900/30 hover:text-red-300"
                         title="Delete"
                         onClick={() => setDeleteTarget(video)}
                       >

@@ -210,6 +210,9 @@ describe('Video API', () => {
       expect(res.body.data.from).toBe('en');
       expect(res.body.data.to).toBe('ko');
       expect(startTranslation).toHaveBeenCalledWith(video.id, 'test.vtt', 'en', 'ko');
+
+      const updated = await prisma.video.findUnique({ where: { id: video.id } });
+      expect(updated?.subtitleStatus).toBe('processing');
     });
 
     it('returns 400 for unsupported language', async () => {

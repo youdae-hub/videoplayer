@@ -159,6 +159,11 @@ videoRouter.post('/:id/translate', async (req, res) => {
     await prisma.subtitle.delete({ where: { id: existing.id } });
   }
 
+  await prisma.video.update({
+    where: { id: video.id },
+    data: { subtitleStatus: 'processing' },
+  });
+
   const sourceSubtitle = video.subtitles[0];
   const sourceFileName = path.basename(sourceSubtitle.src);
 
