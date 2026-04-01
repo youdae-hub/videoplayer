@@ -1,4 +1,4 @@
-import type { VideoService, PaginatedResponse, VideoInput } from './types';
+import type { VideoService, PaginatedResponse, VideoInput, SupportedLanguage } from './types';
 import type { Video } from '@videoplayer/core';
 import { createApiClient } from './apiClient';
 
@@ -142,6 +142,15 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
 
     async transcribeVideo(id: string): Promise<void> {
       await api.post(`/api/videos/${id}/transcribe`, {});
+    },
+
+    async translateVideo(id: string, targetLanguage: string): Promise<void> {
+      await api.post(`/api/videos/${id}/translate`, { targetLanguage });
+    },
+
+    async getLanguages(): Promise<SupportedLanguage[]> {
+      const res = await api.get<{ data: SupportedLanguage[] }>('/api/videos/meta/languages');
+      return res.data;
     },
   };
 }

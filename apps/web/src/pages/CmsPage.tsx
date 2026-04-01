@@ -2,19 +2,27 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Video } from '@videoplayer/core';
 import { formatTime } from '@videoplayer/core';
 import { videoService } from '../services/createVideoService';
-import type { VideoInput } from '../services/types';
+import type { VideoInput, SupportedLanguage } from '../services/types';
 import { VideoFormModal } from '../components/VideoFormModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
 
 function SubtitleStatusBadge({
   video,
+  languages,
   onTranscribe,
+  onTranslate,
 }: {
   video: Video;
+  languages: SupportedLanguage[];
   onTranscribe: (id: string) => void;
+  onTranslate: (id: string, lang: string) => void;
 }) {
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const status = video.subtitleStatus || 'none';
+
+  const existingLangs = video.subtitles.map((s) => s.language);
+  const availableLangs = languages.filter((l) => !existingLangs.includes(l.code));
 
   if (status === 'processing') {
     return (
@@ -27,10 +35,36 @@ function SubtitleStatusBadge({
 
   if (status === 'completed' && video.subtitles.length > 0) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="rounded bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
           {video.subtitles.map((s) => s.label).join(', ')}
         </span>
+        {videoService.translateVideo && availableLangs.length > 0 && (
+          <div className="relative">
+            <button
+              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              onClick={() => setShowLangMenu(!showLangMenu)}
+            >
+              + 번역
+            </button>
+            {showLangMenu && (
+              <div className="absolute left-0 top-6 z-10 rounded border border-neutral-700 bg-neutral-800 py-1 shadow-lg">
+                {availableLangs.map((lang) => (
+                  <button
+                    key={lang.code}
+                    className="block w-full px-4 py-1.5 text-left text-xs text-neutral-300 hover:bg-neutral-700"
+                    onClick={() => {
+                      onTranslate(video.id, lang.code);
+                      setShowLangMenu(false);
+                    }}
+                  >
+                    {lang.nativeLabel}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {videoService.transcribeVideo && (
           <button
             className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
@@ -84,6 +118,7 @@ export function CmsPage() {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Video | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [languages, setLanguages] = useState<SupportedLanguage[]>([]);
   const blobUrlsRef = useRef<string[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -92,6 +127,12 @@ export function CmsPage() {
       blobUrlsRef.current.forEach(revokeVideoUrl);
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    if (videoService.getLanguages) {
+      videoService.getLanguages().then(setLanguages);
+    }
   }, []);
 
   const loadVideos = useCallback(() => {
@@ -178,6 +219,12 @@ export function CmsPage() {
     loadVideos();
   }, [loadVideos]);
 
+  const handleTranslate = useCallback(async (videoId: string, targetLang: string) => {
+    if (!videoService.translateVideo) return;
+    await videoService.translateVideo(videoId, targetLang);
+    loadVideos();
+  }, [loadVideos]);
+
   const apiMode = import.meta.env.VITE_API_MODE || 'mock';
 
   return (
@@ -246,7 +293,7 @@ export function CmsPage() {
                   <td className="px-4 py-3 font-medium">{video.title}</td>
                   <td className="px-4 py-3 text-neutral-400">{formatTime(video.duration)}</td>
                   <td className="px-4 py-3 text-neutral-400">
-                    <SubtitleStatusBadge video={video} onTranscribe={handleTranscribe} />
+                    <SubtitleStatusBadge video={video} languages={languages} onTranscribe={handleTranscribe} onTranslate={handleTranslate} />
                   </td>
                   <td className="px-4 py-3 text-neutral-500 text-xs">
                     {new Date(video.updatedAt).toLocaleDateString()}

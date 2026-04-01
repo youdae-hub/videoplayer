@@ -2,6 +2,8 @@ import { Router } from 'express';
 import path from 'path';
 import { prisma } from '../db.js';
 import { startTranscription } from '../services/transcribe.js';
+import { startTranslation } from '../services/translate.js';
+import { SUPPORTED_LANGUAGES, isSupported } from '../services/languages.js';
 
 export const videoRouter = Router();
 
@@ -31,6 +33,10 @@ videoRouter.get('/', async (req, res) => {
       },
     },
   });
+});
+
+videoRouter.get('/meta/languages', async (_req, res) => {
+  res.json({ data: SUPPORTED_LANGUAGES });
 });
 
 videoRouter.get('/:id', async (req, res) => {
@@ -122,3 +128,42 @@ videoRouter.post('/:id/transcribe', async (req, res) => {
 
   res.json({ data: { status: 'processing' } });
 });
+
+videoRouter.post('/:id/translate', async (req, res) => {
+  const { targetLanguage } = req.body;
+
+  if (!targetLanguage || !isSupported(targetLanguage)) {
+    res.status(400).json({
+      error: `Unsupported language. Supported: ${SUPPORTED_LANGUAGES.map((l) => l.code).join(', ')}`,
+    });
+    return;
+  }
+
+  const video = await prisma.video.findUnique({
+    where: { id: req.params.id },
+    include: { subtitles: true },
+  });
+
+  if (!video) {
+    res.status(404).json({ error: 'Video not found' });
+    return;
+  }
+
+  if (video.subtitles.length === 0) {
+    res.status(400).json({ error: 'No source subtitle to translate from' });
+    return;
+  }
+
+  const existing = video.subtitles.find((s) => s.language === targetLanguage);
+  if (existing) {
+    await prisma.subtitle.delete({ where: { id: existing.id } });
+  }
+
+  const sourceSubtitle = video.subtitles[0];
+  const sourceFileName = path.basename(sourceSubtitle.src);
+
+  startTranslation(video.id, sourceFileName, sourceSubtitle.language, targetLanguage);
+
+  res.json({ data: { status: 'translating', from: sourceSubtitle.language, to: targetLanguage } });
+});
+

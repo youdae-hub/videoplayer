@@ -19,6 +19,12 @@ export interface VideoInput {
   thumbnailBlob?: Blob;
 }
 
+export interface SupportedLanguage {
+  code: string;
+  label: string;
+  nativeLabel: string;
+}
+
 export interface VideoService {
   getVideos(page?: number, pageSize?: number): Promise<PaginatedResponse<Video>>;
   getVideoById(id: string): Promise<Video>;
@@ -26,4 +32,6 @@ export interface VideoService {
   updateVideo(id: string, input: VideoInput): Promise<Video>;
   deleteVideo(id: string): Promise<void>;
   transcribeVideo?(id: string): Promise<void>;
+  translateVideo?(id: string, targetLanguage: string): Promise<void>;
+  getLanguages?(): Promise<SupportedLanguage[]>;
 }

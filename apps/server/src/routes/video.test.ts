@@ -7,7 +7,12 @@ vi.mock('../services/transcribe.js', () => ({
   startTranscription: vi.fn(),
 }));
 
+vi.mock('../services/translate.js', () => ({
+  startTranslation: vi.fn(),
+}));
+
 import { startTranscription } from '../services/transcribe.js';
+import { startTranslation } from '../services/translate.js';
 
 describe('Video API', () => {
   beforeEach(async () => {
@@ -180,6 +185,66 @@ describe('Video API', () => {
       const res = await request(app).post(`/api/videos/${video.id}/transcribe`);
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/videos/:id/translate', () => {
+    it('starts translation for video with subtitles', async () => {
+      const video = await prisma.video.create({
+        data: {
+          title: 'To Translate',
+          videoUrl: '/uploads/videos/test.mp4',
+          subtitleStatus: 'completed',
+          subtitles: {
+            create: { label: 'English', language: 'en', src: '/uploads/subtitles/test.vtt' },
+          },
+        },
+      });
+
+      const res = await request(app)
+        .post(`/api/videos/${video.id}/translate`)
+        .send({ targetLanguage: 'ko' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe('translating');
+      expect(res.body.data.from).toBe('en');
+      expect(res.body.data.to).toBe('ko');
+      expect(startTranslation).toHaveBeenCalledWith(video.id, 'test.vtt', 'en', 'ko');
+    });
+
+    it('returns 400 for unsupported language', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'Video', videoUrl: '/v.mp4' },
+      });
+
+      const res = await request(app)
+        .post(`/api/videos/${video.id}/translate`)
+        .send({ targetLanguage: 'xx' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 for video without subtitles', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'No Subs', videoUrl: '/v.mp4' },
+      });
+
+      const res = await request(app)
+        .post(`/api/videos/${video.id}/translate`)
+        .send({ targetLanguage: 'ko' });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /api/videos/meta/languages', () => {
+    it('returns supported languages list', async () => {
+      const res = await request(app).get('/api/videos/meta/languages');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(4);
+      expect(res.body.data[0].code).toBe('ko');
+      expect(res.body.data[1].code).toBe('en');
     });
   });
 });

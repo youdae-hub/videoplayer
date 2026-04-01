@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { prisma } from '../db.js';
+import { getLanguageLabel } from './languages.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPTS_DIR = path.join(__dirname, '..', '..', 'scripts');
@@ -86,15 +87,3 @@ export function startTranscription(
   });
 }
 
-function getLanguageLabel(code: string): string {
-  const labels: Record<string, string> = {
-    ko: '한국어',
-    en: 'English',
-    ja: '日本語',
-    zh: '中文',
-    es: 'Español',
-    fr: 'Français',
-    de: 'Deutsch',
-  };
-  return labels[code] || code;
-}
