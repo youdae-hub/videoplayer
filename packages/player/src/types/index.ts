@@ -6,6 +6,7 @@ export interface Video {
   videoUrl: string;
   duration: number;
   subtitles: Subtitle[];
+  subtitleStatus?: 'none' | 'processing' | 'completed' | 'failed';
   createdAt: string;
   updatedAt: string;
 }
