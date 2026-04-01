@@ -132,6 +132,7 @@ function VideoPlayerInner({ src, poster, subtitles, autoPlay, className }: Video
         src={src}
         poster={poster}
         autoPlay={autoPlay}
+        crossOrigin="anonymous"
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onWaiting={handleWaiting}
