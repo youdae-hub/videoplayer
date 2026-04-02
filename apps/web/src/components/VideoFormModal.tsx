@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Video } from '@videoplayer/core';
 import { formatTime } from '@videoplayer/core';
 import type { VideoInput } from '../services/types';
@@ -37,9 +37,44 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
   const [pickerKey, setPickerKey] = useState(0);
+  const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
+  const [fetchingVideo, setFetchingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!video;
+
+  useEffect(() => {
+    return () => {
+      if (videoBlobUrl) URL.revokeObjectURL(videoBlobUrl);
+    };
+  }, [videoBlobUrl]);
+
+  const handleOpenThumbnailPicker = useCallback(async () => {
+    if (fetchingVideo) return;
+
+    if (videoUrl.startsWith('blob:')) {
+      setPickerKey((k) => k + 1);
+      setShowThumbnailPicker(true);
+      return;
+    }
+
+    if (!videoBlobUrl) {
+      setFetchingVideo(true);
+      try {
+        const res = await fetch(videoUrl);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setVideoBlobUrl(blobUrl);
+      } catch {
+        setVideoBlobUrl(null);
+      } finally {
+        setFetchingVideo(false);
+      }
+    }
+
+    setPickerKey((k) => k + 1);
+    setShowThumbnailPicker(true);
+  }, [fetchingVideo, videoUrl, videoBlobUrl]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -190,10 +225,11 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                       {videoUrl && (
                         <button
                           type="button"
-                          onClick={() => { setPickerKey((k) => k + 1); setShowThumbnailPicker(true); }}
+                          onClick={handleOpenThumbnailPicker}
+                          disabled={fetchingVideo}
                           className="mt-1 rounded bg-neutral-700 px-2 py-1 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                         >
-                          썸네일 변경
+                          {fetchingVideo ? '로딩 중...' : '썸네일 변경'}
                         </button>
                       )}
                     </div>
@@ -258,10 +294,11 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                       {videoUrl && (
                         <button
                           type="button"
-                          onClick={() => { setPickerKey((k) => k + 1); setShowThumbnailPicker(true); }}
+                          onClick={handleOpenThumbnailPicker}
+                          disabled={fetchingVideo}
                           className="self-start rounded bg-neutral-700 px-2 py-1 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                         >
-                          썸네일 변경
+                          {fetchingVideo ? '로딩 중...' : '썸네일 변경'}
                         </button>
                       )}
                     </div>
@@ -278,7 +315,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                     {videoUrl && (
                       <button
                         type="button"
-                        onClick={() => { setPickerKey((k) => k + 1); setShowThumbnailPicker(true); }}
+                        onClick={handleOpenThumbnailPicker}
+                          disabled={fetchingVideo}
                         className="shrink-0 rounded bg-neutral-700 px-2 py-2 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                       >
                         썸네일 변경
@@ -370,7 +408,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       {showThumbnailPicker && videoUrl && (
         <ThumbnailPicker
           key={pickerKey}
-          videoSrc={videoUrl}
+          videoSrc={videoBlobUrl || videoUrl}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);
             setThumbnailBlob(blob);

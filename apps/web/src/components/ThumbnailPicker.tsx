@@ -36,49 +36,14 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
-    const currentTime = videoRef.current.currentTime;
     setCapturing(true);
     setError(null);
 
     try {
-      // Try direct capture first (works for same-origin or blob URLs)
       const result = await captureFromVideo(videoRef.current);
       setPreview(result);
     } catch {
-      // Cross-origin tainted canvas - fetch as blob and capture from temp video
-      try {
-        const res = await fetch(videoSrc);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-
-        try {
-          const result = await new Promise<{ thumbnailUrl: string; thumbnailBlob: Blob }>((resolve, reject) => {
-            const tempVideo = document.createElement('video');
-            tempVideo.muted = true;
-            tempVideo.preload = 'auto';
-
-            tempVideo.addEventListener('error', () => reject(new Error('Video load error')));
-            tempVideo.addEventListener('seeked', async () => {
-              try {
-                resolve(await captureFromVideo(tempVideo));
-              } catch (e) {
-                reject(e);
-              }
-            });
-
-            tempVideo.src = blobUrl;
-            tempVideo.addEventListener('loadeddata', () => {
-              tempVideo.currentTime = currentTime;
-            });
-          });
-
-          setPreview(result);
-        } finally {
-          URL.revokeObjectURL(blobUrl);
-        }
-      } catch {
-        setError('프레임 캡처에 실패했습니다. 다시 시도해주세요.');
-      }
+      setError('프레임 캡처에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setCapturing(false);
     }

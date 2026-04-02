@@ -179,9 +179,15 @@ describe('VideoFormModal', () => {
 
   it('opens ThumbnailPicker when thumbnail change button clicked', async () => {
     const user = userEvent.setup();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      blob: () => Promise.resolve(new Blob(['video'], { type: 'video/mp4' })),
+    } as unknown as Response);
     render(<VideoFormModal video={mockVideo} onSubmit={vi.fn()} onClose={vi.fn()} />);
 
     await user.click(screen.getByText('썸네일 변경'));
-    expect(screen.getByText('썸네일 선택')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('썸네일 선택')).toBeInTheDocument();
+    });
+    fetchSpy.mockRestore();
   });
 });
