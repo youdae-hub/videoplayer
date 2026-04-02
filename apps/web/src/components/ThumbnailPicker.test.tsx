@@ -104,7 +104,10 @@ describe('ThumbnailPicker', () => {
     render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4" />);
 
     await waitFor(() => {
-      expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:4000/uploads/videos/test.mp4');
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('http://localhost:4000/uploads/videos/test.mp4'),
+        expect.objectContaining({ cache: 'no-store' }),
+      );
     });
     expect(screen.getByText('현재 프레임 캡처')).toBeInTheDocument();
   });

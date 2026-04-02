@@ -9,6 +9,7 @@ interface ThumbnailPickerProps {
 
 export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
@@ -16,25 +17,33 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (videoSrc.startsWith('blob:') || videoSrc.startsWith('data:')) {
       setBlobUrl(videoSrc);
       return;
     }
 
-    let revoke: string | null = null;
-    fetch(videoSrc)
+    const fetchUrl = `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+
+    fetch(fetchUrl, { cache: 'no-store' })
       .then((res) => res.blob())
       .then((blob) => {
+        if (cancelled) return;
         const url = URL.createObjectURL(blob);
-        revoke = url;
+        blobUrlRef.current = url;
         setBlobUrl(url);
       })
       .catch(() => {
-        setLoadError(true);
+        if (!cancelled) setLoadError(true);
       });
 
     return () => {
-      if (revoke) URL.revokeObjectURL(revoke);
+      cancelled = true;
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
   }, [videoSrc]);
 
