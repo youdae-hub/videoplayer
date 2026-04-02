@@ -62,13 +62,12 @@ export function ThumbnailPicker({ isOpen, videoSrc, onCapture, onClose }: Thumbn
     onCapture(preview.url, preview.blob);
   };
 
-  if (!isOpen) return null;
-
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
       data-testid="thumbnail-picker-overlay"
+      style={{ display: isOpen ? undefined : 'none' }}
     >
       <div
         className="w-full max-w-2xl mx-4 rounded-lg bg-neutral-900 border border-neutral-700 p-6"

@@ -23,9 +23,16 @@ describe('ThumbnailPicker', () => {
     expect(video).toBeInTheDocument();
   });
 
-  it('renders nothing when closed', () => {
+  it('hides overlay when closed', () => {
     render(<ThumbnailPicker {...defaultProps} isOpen={false} />);
-    expect(screen.queryByText('썸네일 선택')).not.toBeInTheDocument();
+    const overlay = screen.getByTestId('thumbnail-picker-overlay');
+    expect(overlay.style.display).toBe('none');
+  });
+
+  it('keeps video element in DOM when closed', () => {
+    render(<ThumbnailPicker {...defaultProps} isOpen={false} />);
+    const video = document.querySelector('video');
+    expect(video).toBeInTheDocument();
   });
 
   it('does not set crossOrigin on video element', () => {
@@ -69,9 +76,7 @@ describe('ThumbnailPicker', () => {
 
   it('resets preview when reopened', () => {
     const { rerender } = render(<ThumbnailPicker {...defaultProps} />);
-    // Close
     rerender(<ThumbnailPicker {...defaultProps} isOpen={false} />);
-    // Reopen
     rerender(<ThumbnailPicker {...defaultProps} isOpen={true} />);
     expect(screen.queryByText('캡처된 썸네일 미리보기')).not.toBeInTheDocument();
   });
