@@ -3,6 +3,7 @@ import type { Video } from '@videoplayer/core';
 import { formatTime } from '@videoplayer/core';
 import type { VideoInput } from '../services/types';
 import { processVideoFile } from '../utils/videoFileProcessor';
+import { ThumbnailPicker } from './ThumbnailPicker';
 
 type InputMode = 'file' | 'url';
 
@@ -34,6 +35,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [fileName, setFileName] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
+  const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!video;
@@ -184,6 +186,15 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                     <div className="text-xs text-neutral-400 space-y-1">
                       <div>재생 시간: <span className="text-white">{formatTime(duration)}</span></div>
                       {fileName && <div>파일: <span className="text-white">{fileName}</span></div>}
+                      {videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setShowThumbnailPicker(true)}
+                          className="mt-1 rounded bg-neutral-700 px-2 py-1 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
+                        >
+                          썸네일 변경
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -227,14 +238,53 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-400">썸네일 URL</label>
-                <input
-                  type="text"
-                  value={thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
-                  className={inputClass}
-                  placeholder="https://example.com/thumb.jpg"
-                />
+                <label className="block text-sm font-medium text-neutral-400">썸네일</label>
+                {thumbnailUrl ? (
+                  <div className="mt-1 flex items-start gap-3">
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="h-16 w-28 rounded object-cover border border-neutral-700"
+                    />
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="text"
+                        value={thumbnailUrl}
+                        onChange={(e) => setThumbnailUrl(e.target.value)}
+                        className="rounded-md bg-neutral-800 border border-neutral-700 px-2 py-1 text-xs text-white focus:border-blue-500 focus:outline-none"
+                        placeholder="https://example.com/thumb.jpg"
+                      />
+                      {videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setShowThumbnailPicker(true)}
+                          className="self-start rounded bg-neutral-700 px-2 py-1 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
+                        >
+                          썸네일 변경
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={thumbnailUrl}
+                      onChange={(e) => setThumbnailUrl(e.target.value)}
+                      className={inputClass}
+                      placeholder="https://example.com/thumb.jpg"
+                    />
+                    {videoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setShowThumbnailPicker(true)}
+                        className="shrink-0 rounded bg-neutral-700 px-2 py-2 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
+                      >
+                        썸네일 변경
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -315,6 +365,18 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
           </div>
         </form>
       </div>
+
+      {showThumbnailPicker && videoUrl && (
+        <ThumbnailPicker
+          videoSrc={videoUrl}
+          onCapture={(url, blob) => {
+            setThumbnailUrl(url);
+            setThumbnailBlob(blob);
+            setShowThumbnailPicker(false);
+          }}
+          onClose={() => setShowThumbnailPicker(false)}
+        />
+      )}
     </div>
   );
 }

@@ -12,6 +12,10 @@ vi.mock('../utils/videoFileProcessor', () => ({
     thumbnailBlob: new Blob(['thumb'], { type: 'image/jpeg' }),
     duration: 90,
   }),
+  captureVideoFrame: vi.fn().mockResolvedValue({
+    thumbnailUrl: 'data:image/jpeg;base64,captured',
+    thumbnailBlob: new Blob(['captured'], { type: 'image/jpeg' }),
+  }),
 }));
 
 const mockVideo: Video = {
@@ -153,5 +157,31 @@ describe('VideoFormModal', () => {
   it('shows file select button in file mode', () => {
     render(<VideoFormModal onSubmit={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText('클릭하여 동영상 파일을 선택하세요')).toBeInTheDocument();
+  });
+
+  it('shows thumbnail change button in edit mode when videoUrl exists', () => {
+    render(<VideoFormModal video={mockVideo} onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByText('썸네일 변경')).toBeInTheDocument();
+  });
+
+  it('shows thumbnail change button after file upload', async () => {
+    const user = userEvent.setup();
+    render(<VideoFormModal onSubmit={vi.fn()} onClose={vi.fn()} />);
+
+    const fileInput = screen.getByTestId('file-input');
+    const file = new File(['video-data'], 'my-video.mp4', { type: 'video/mp4' });
+    await user.upload(fileInput, file);
+
+    await waitFor(() => {
+      expect(screen.getByText('썸네일 변경')).toBeInTheDocument();
+    });
+  });
+
+  it('opens ThumbnailPicker when thumbnail change button clicked', async () => {
+    const user = userEvent.setup();
+    render(<VideoFormModal video={mockVideo} onSubmit={vi.fn()} onClose={vi.fn()} />);
+
+    await user.click(screen.getByText('썸네일 변경'));
+    expect(screen.getByText('썸네일 선택')).toBeInTheDocument();
   });
 });
