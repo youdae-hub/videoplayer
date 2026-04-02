@@ -35,44 +35,55 @@ export function processVideoFile(file: File): Promise<ProcessedVideoFile> {
     });
 
     video.addEventListener('seeked', () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const scale = THUMBNAIL_WIDTH / video.videoWidth;
-        canvas.width = THUMBNAIL_WIDTH;
-        canvas.height = Math.floor(video.videoHeight * scale);
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
+      const duration = Math.floor(video.duration);
+      captureVideoFrame(video, THUMBNAIL_WIDTH)
+        .then(({ thumbnailUrl, thumbnailBlob }) => {
           cleanup();
-          reject(new Error('Canvas 컨텍스트를 생성할 수 없습니다.'));
-          return;
-        }
-
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
-        const duration = Math.floor(video.duration);
-
-        canvas.toBlob(
-          (blob) => {
-            cleanup();
-            if (!blob) {
-              URL.revokeObjectURL(videoUrl);
-              reject(new Error('썸네일 Blob 생성에 실패했습니다.'));
-              return;
-            }
-            resolve({ file, videoUrl, thumbnailUrl, thumbnailBlob: blob, duration });
-          },
-          'image/jpeg',
-          0.8,
-        );
-      } catch {
-        cleanup();
-        URL.revokeObjectURL(videoUrl);
-        reject(new Error('썸네일 생성에 실패했습니다.'));
-      }
+          resolve({ file, videoUrl, thumbnailUrl, thumbnailBlob, duration });
+        })
+        .catch(() => {
+          cleanup();
+          URL.revokeObjectURL(videoUrl);
+          reject(new Error('썸네일 생성에 실패했습니다.'));
+        });
     });
 
     video.src = videoUrl;
+  });
+}
+
+const CAPTURE_WIDTH = 320;
+
+export function captureVideoFrame(
+  video: HTMLVideoElement,
+  width = CAPTURE_WIDTH,
+): Promise<{ thumbnailUrl: string; thumbnailBlob: Blob }> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const scale = width / video.videoWidth;
+    canvas.width = width;
+    canvas.height = Math.floor(video.videoHeight * scale);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      reject(new Error('Canvas 컨텍스트를 생성할 수 없습니다.'));
+      return;
+    }
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('썸네일 Blob 생성에 실패했습니다.'));
+          return;
+        }
+        resolve({ thumbnailUrl, thumbnailBlob: blob });
+      },
+      'image/jpeg',
+      0.8,
+    );
   });
 }
 

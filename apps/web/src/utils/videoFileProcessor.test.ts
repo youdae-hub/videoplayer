@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { processVideoFile, revokeVideoUrl } from './videoFileProcessor';
+import { processVideoFile, revokeVideoUrl, captureVideoFrame } from './videoFileProcessor';
 
 describe('processVideoFile', () => {
   let mockVideo: Record<string, unknown>;
@@ -101,6 +101,88 @@ describe('processVideoFile', () => {
 
     await promise;
     expect(mockVideo.currentTime).toBe(0.5);
+  });
+});
+
+describe('captureVideoFrame', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('captures current frame from video element', async () => {
+    const mockCanvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({
+        drawImage: vi.fn(),
+      })),
+      toDataURL: vi.fn(() => 'data:image/jpeg;base64,captured'),
+      toBlob: vi.fn((cb: (blob: Blob | null) => void) => {
+        cb(new Blob(['frame'], { type: 'image/jpeg' }));
+      }),
+    };
+
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'canvas') return mockCanvas as unknown as HTMLCanvasElement;
+      return document.createElement(tag);
+    });
+
+    const mockVideo = {
+      videoWidth: 1920,
+      videoHeight: 1080,
+    } as HTMLVideoElement;
+
+    const result = await captureVideoFrame(mockVideo);
+    expect(result.thumbnailUrl).toBe('data:image/jpeg;base64,captured');
+    expect(result.thumbnailBlob).toBeInstanceOf(Blob);
+    expect(mockCanvas.width).toBe(320);
+    expect(mockCanvas.height).toBe(180);
+  });
+
+  it('rejects when canvas context is unavailable', async () => {
+    const mockCanvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => null),
+    };
+
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'canvas') return mockCanvas as unknown as HTMLCanvasElement;
+      return document.createElement(tag);
+    });
+
+    const mockVideo = {
+      videoWidth: 1920,
+      videoHeight: 1080,
+    } as HTMLVideoElement;
+
+    await expect(captureVideoFrame(mockVideo)).rejects.toThrow('Canvas 컨텍스트를 생성할 수 없습니다.');
+  });
+
+  it('rejects when toBlob returns null', async () => {
+    const mockCanvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({
+        drawImage: vi.fn(),
+      })),
+      toDataURL: vi.fn(() => 'data:image/jpeg;base64,captured'),
+      toBlob: vi.fn((cb: (blob: Blob | null) => void) => {
+        cb(null);
+      }),
+    };
+
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'canvas') return mockCanvas as unknown as HTMLCanvasElement;
+      return document.createElement(tag);
+    });
+
+    const mockVideo = {
+      videoWidth: 1920,
+      videoHeight: 1080,
+    } as HTMLVideoElement;
+
+    await expect(captureVideoFrame(mockVideo)).rejects.toThrow('썸네일 Blob 생성에 실패했습니다.');
   });
 });
 
