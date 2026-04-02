@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { captureVideoFrame } from '../utils/videoFileProcessor';
 
 interface ThumbnailPickerProps {
@@ -12,10 +12,31 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
-  const cacheBustedSrc = videoSrc.startsWith('blob:')
-    ? videoSrc
-    : `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  useEffect(() => {
+    if (videoSrc.startsWith('blob:') || videoSrc.startsWith('data:')) {
+      setBlobUrl(videoSrc);
+      return;
+    }
+
+    let revoke: string | null = null;
+    fetch(videoSrc)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        revoke = url;
+        setBlobUrl(url);
+      })
+      .catch(() => {
+        setLoadError(true);
+      });
+
+    return () => {
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [videoSrc]);
 
   const handleVideoReady = useCallback(() => {
     setVideoReady(true);
@@ -50,16 +71,25 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
         <h2 className="text-lg font-bold text-white mb-4">썸네일 선택</h2>
 
         <div className="rounded-lg overflow-hidden bg-black">
-          <video
-            ref={videoRef}
-            src={cacheBustedSrc}
-            controls
-            muted
-            preload="auto"
-            crossOrigin="anonymous"
-            onLoadedData={handleVideoReady}
-            className="w-full max-h-[400px]"
-          />
+          {loadError ? (
+            <div className="flex items-center justify-center h-48 text-sm text-red-400">
+              동영상을 로드할 수 없습니다.
+            </div>
+          ) : blobUrl ? (
+            <video
+              ref={videoRef}
+              src={blobUrl}
+              controls
+              muted
+              preload="auto"
+              onLoadedData={handleVideoReady}
+              className="w-full max-h-[400px]"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-48 text-sm text-neutral-500">
+              동영상 로딩 중...
+            </div>
+          )}
         </div>
 
         <p className="mt-2 text-xs text-neutral-500">

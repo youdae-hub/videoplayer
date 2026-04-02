@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThumbnailPicker } from './ThumbnailPicker';
 
@@ -14,10 +14,15 @@ import { captureVideoFrame } from '../utils/videoFileProcessor';
 
 describe('ThumbnailPicker', () => {
   const defaultProps = {
-    videoSrc: 'http://localhost:4000/uploads/videos/test.mp4',
+    videoSrc: 'blob:http://localhost/video-123',
     onCapture: vi.fn(),
     onClose: vi.fn(),
   };
+
+  beforeEach(() => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:http://localhost/fetched-video');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  });
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -29,7 +34,7 @@ describe('ThumbnailPicker', () => {
     expect(screen.getByText('취소')).toBeInTheDocument();
     const video = document.querySelector('video');
     expect(video).toBeInTheDocument();
-    expect(video?.src).toContain('test.mp4');
+    expect(video?.src).toContain('blob:');
   });
 
   it('shows title', () => {
@@ -88,6 +93,30 @@ describe('ThumbnailPicker', () => {
       video.dispatchEvent(new Event('loadeddata'));
     });
     expect(captureBtn).not.toBeDisabled();
+  });
+
+  it('fetches video as blob for server URLs', async () => {
+    const mockBlob = new Blob(['video'], { type: 'video/mp4' });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      blob: () => Promise.resolve(mockBlob),
+    } as Response);
+
+    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4" />);
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:4000/uploads/videos/test.mp4');
+    });
+    expect(screen.getByText('현재 프레임 캡처')).toBeInTheDocument();
+  });
+
+  it('shows error when video fetch fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network error'));
+
+    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/bad.mp4" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('동영상을 로드할 수 없습니다.')).toBeInTheDocument();
+    });
   });
 
   it('calls onClose when cancel clicked', async () => {
