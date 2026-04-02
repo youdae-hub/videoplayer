@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Video } from '@videoplayer/core';
 import { formatTime } from '@videoplayer/core';
 import type { VideoInput } from '../services/types';
@@ -36,36 +36,48 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
-  const [fetchedVideoBlob, setFetchedVideoBlob] = useState<Blob | null>(null);
   const [fetchingVideo, setFetchingVideo] = useState(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   const isEdit = !!video;
 
-  // Single blob URL: created once per videoFile or fetchedVideoBlob change
-  const previewBlobUrl = useMemo(() => {
-    const source = videoFile ?? fetchedVideoBlob;
-    if (!source) return null;
-    return URL.createObjectURL(source);
-  }, [videoFile, fetchedVideoBlob]);
-
-  // Revoke only when the source changes or component unmounts
+  // Revoke blob URL ONLY on component unmount — no useEffect[deps] revoke
   useEffect(() => {
     return () => {
-      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
-  }, [previewBlobUrl]);
+  }, []);
+
+  const createPreviewUrl = useCallback((source: Blob | File) => {
+    // Revoke old URL before creating new one
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+    }
+    const url = URL.createObjectURL(source);
+    blobUrlRef.current = url;
+    setPreviewBlobUrl(url);
+  }, []);
 
   const handleOpenThumbnailPicker = useCallback(async () => {
     if (fetchingVideo) return;
 
-    // For remote URLs without a local file, fetch once and cache the blob
-    if (!videoFile && !fetchedVideoBlob) {
+    // File upload: create blob URL from file if not already created
+    if (videoFile && !previewBlobUrl) {
+      createPreviewUrl(videoFile);
+    }
+
+    // Remote URL: fetch once and create blob URL
+    if (!videoFile && !previewBlobUrl) {
       setFetchingVideo(true);
       try {
         const res = await fetch(videoUrl);
         if (!res.ok) throw new Error();
-        setFetchedVideoBlob(await res.blob());
+        createPreviewUrl(await res.blob());
       } catch {
         // Fetch failed - still open picker with raw videoUrl as fallback
       } finally {
@@ -74,7 +86,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
     }
 
     setShowThumbnailPicker(true);
-  }, [fetchingVideo, videoUrl, videoFile, fetchedVideoBlob]);
+  }, [fetchingVideo, videoUrl, videoFile, previewBlobUrl, createPreviewUrl]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,7 +102,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       setThumbnailUrl(result.thumbnailUrl);
       setDuration(result.duration);
       setThumbnailBlob(result.thumbnailBlob);
-      setFetchedVideoBlob(null);
+      // Create blob URL for the new file
+      createPreviewUrl(file);
       if (!title) {
         setTitle(file.name.replace(/\.[^.]+$/, ''));
       }
@@ -100,7 +113,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
     } finally {
       setProcessing(false);
     }
-  }, [title]);
+  }, [title, createPreviewUrl]);
 
   const handleAddSubtitle = useCallback(() => {
     setSubtitles((prev) => [...prev, { label: '', language: '', src: '' }]);
@@ -118,7 +131,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitUrl = videoFile ? (previewBlobUrl ?? '') : videoUrl;
+    const submitUrl = previewBlobUrl || videoUrl;
     if (!title.trim() || !submitUrl.trim()) {
       setError('제목과 동영상 URL은 필수입니다.');
       return;

@@ -84,6 +84,7 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
             src={videoSrc}
             controls
             muted
+            playsInline
             preload="auto"
             onLoadedData={() => setVideoReady(true)}
             className="w-full max-h-[400px]"
