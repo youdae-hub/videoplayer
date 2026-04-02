@@ -407,9 +407,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
         </form>
       </div>
 
-      {videoSrcForDisplay && (
+      {showThumbnailPicker && videoSrcForDisplay && (
         <ThumbnailPicker
-          isOpen={showThumbnailPicker}
           videoSrc={videoSrcForDisplay}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);

@@ -5,7 +5,6 @@ import { ThumbnailPicker } from './ThumbnailPicker';
 
 describe('ThumbnailPicker', () => {
   const defaultProps = {
-    isOpen: true,
     videoSrc: 'blob:http://localhost/video-123',
     onCapture: vi.fn(),
     onClose: vi.fn(),
@@ -15,22 +14,10 @@ describe('ThumbnailPicker', () => {
     vi.clearAllMocks();
   });
 
-  it('renders video element and capture button when open', () => {
+  it('renders video element and capture button', () => {
     render(<ThumbnailPicker {...defaultProps} />);
     expect(screen.getByText('현재 프레임 캡처')).toBeInTheDocument();
     expect(screen.getByText('취소')).toBeInTheDocument();
-    const video = document.querySelector('video');
-    expect(video).toBeInTheDocument();
-  });
-
-  it('hides overlay when closed', () => {
-    render(<ThumbnailPicker {...defaultProps} isOpen={false} />);
-    const overlay = screen.getByTestId('thumbnail-picker-overlay');
-    expect(overlay.style.display).toBe('none');
-  });
-
-  it('keeps video element in DOM when closed', () => {
-    render(<ThumbnailPicker {...defaultProps} isOpen={false} />);
     const video = document.querySelector('video');
     expect(video).toBeInTheDocument();
   });
@@ -74,10 +61,20 @@ describe('ThumbnailPicker', () => {
     expect(captureBtn).not.toBeDisabled();
   });
 
-  it('resets preview when reopened', () => {
-    const { rerender } = render(<ThumbnailPicker {...defaultProps} />);
-    rerender(<ThumbnailPicker {...defaultProps} isOpen={false} />);
-    rerender(<ThumbnailPicker {...defaultProps} isOpen={true} />);
-    expect(screen.queryByText('캡처된 썸네일 미리보기')).not.toBeInTheDocument();
+  it('releases video resource on unmount', () => {
+    const pauseSpy = vi.fn();
+    const loadSpy = vi.fn();
+    const removeAttrSpy = vi.fn();
+
+    const { unmount } = render(<ThumbnailPicker {...defaultProps} />);
+    const video = document.querySelector('video')!;
+    video.pause = pauseSpy;
+    video.load = loadSpy;
+    video.removeAttribute = removeAttrSpy;
+
+    unmount();
+    expect(pauseSpy).toHaveBeenCalled();
+    expect(removeAttrSpy).toHaveBeenCalledWith('src');
+    expect(loadSpy).toHaveBeenCalled();
   });
 });

@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
 interface ThumbnailPickerProps {
-  isOpen: boolean;
   videoSrc: string;
   onCapture: (thumbnailUrl: string, thumbnailBlob: Blob) => void;
   onClose: () => void;
@@ -28,19 +27,24 @@ function captureFromVideo(video: HTMLVideoElement): Promise<{ thumbnailUrl: stri
   });
 }
 
-export function ThumbnailPicker({ isOpen, videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
+export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Explicitly release video decoder on unmount
   useEffect(() => {
-    if (isOpen) {
-      setPreview(null);
-      setError(null);
-    }
-  }, [isOpen]);
+    const video = videoRef.current;
+    return () => {
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+    };
+  }, []);
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
@@ -67,7 +71,6 @@ export function ThumbnailPicker({ isOpen, videoSrc, onCapture, onClose }: Thumbn
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
       data-testid="thumbnail-picker-overlay"
-      style={{ display: isOpen ? undefined : 'none' }}
     >
       <div
         className="w-full max-w-2xl mx-4 rounded-lg bg-neutral-900 border border-neutral-700 p-6"
