@@ -110,6 +110,11 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
     },
 
     async updateVideo(id: string, input: VideoInput): Promise<Video> {
+      // Fetch existing video to preserve media relations that aren't being changed.
+      // Strapi PUT treats missing relation fields as null.
+      const existing = await api.get<StrapiResponse<StrapiVideoData>>(`/api/videos/${id}?${populate}`);
+      const existingData = existing.data;
+
       let videoMediaId: number | undefined;
       let thumbnailMediaId: number | undefined;
 
@@ -125,8 +130,8 @@ export function createStrapiVideoService(baseUrl?: string): VideoService {
           title: input.title,
           description: input.description,
           duration: input.duration,
-          ...(videoMediaId && { videoFile: videoMediaId }),
-          ...(thumbnailMediaId && { thumbnail: thumbnailMediaId }),
+          videoFile: videoMediaId ?? existingData.videoFile?.id ?? undefined,
+          thumbnail: thumbnailMediaId ?? existingData.thumbnail?.id ?? undefined,
         },
       });
       return transformVideo(res.data, strapiUrl);
