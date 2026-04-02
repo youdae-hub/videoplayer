@@ -370,11 +370,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       {showThumbnailPicker && videoUrl && (
         <ThumbnailPicker
           key={pickerKey}
-          videoSrc={
-            videoUrl.startsWith('blob:') || videoUrl.startsWith('data:')
-              ? videoUrl
-              : `${videoUrl}${videoUrl.includes('?') ? '&' : '?'}_t=${pickerKey}`
-          }
+          videoSrc={videoUrl}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);
             setThumbnailBlob(blob);

@@ -1,10 +1,30 @@
-import { useState, useRef, useCallback } from 'react';
-import { captureVideoFrame } from '../utils/videoFileProcessor';
+import { useState, useRef } from 'react';
 
 interface ThumbnailPickerProps {
   videoSrc: string;
   onCapture: (thumbnailUrl: string, thumbnailBlob: Blob) => void;
   onClose: () => void;
+}
+
+const CAPTURE_WIDTH = 320;
+
+function captureFromVideo(video: HTMLVideoElement): Promise<{ thumbnailUrl: string; thumbnailBlob: Blob }> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const scale = CAPTURE_WIDTH / video.videoWidth;
+    canvas.width = CAPTURE_WIDTH;
+    canvas.height = Math.floor(video.videoHeight * scale);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { reject(new Error('Canvas error')); return; }
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+    canvas.toBlob(
+      (blob) => blob ? resolve({ thumbnailUrl, thumbnailBlob: blob }) : reject(new Error('Blob error')),
+      'image/jpeg', 0.8,
+    );
+  });
 }
 
 export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
@@ -14,22 +34,51 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
   const [videoReady, setVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const initVideo = useCallback((el: HTMLVideoElement | null) => {
-    videoRef.current = el;
-    if (el) {
-      el.load();
-    }
-  }, []);
-
   const handleCapture = async () => {
     if (!videoRef.current) return;
+    const currentTime = videoRef.current.currentTime;
     setCapturing(true);
     setError(null);
+
     try {
-      const { thumbnailUrl, thumbnailBlob } = await captureVideoFrame(videoRef.current);
-      setPreview({ url: thumbnailUrl, blob: thumbnailBlob });
+      // Try direct capture first (works for same-origin or blob URLs)
+      const result = await captureFromVideo(videoRef.current);
+      setPreview(result);
     } catch {
-      setError('프레임 캡처에 실패했습니다. 동영상을 재생한 후 다시 시도해주세요.');
+      // Cross-origin tainted canvas - fetch as blob and capture from temp video
+      try {
+        const res = await fetch(videoSrc);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        try {
+          const result = await new Promise<{ thumbnailUrl: string; thumbnailBlob: Blob }>((resolve, reject) => {
+            const tempVideo = document.createElement('video');
+            tempVideo.muted = true;
+            tempVideo.preload = 'auto';
+
+            tempVideo.addEventListener('error', () => reject(new Error('Video load error')));
+            tempVideo.addEventListener('seeked', async () => {
+              try {
+                resolve(await captureFromVideo(tempVideo));
+              } catch (e) {
+                reject(e);
+              }
+            });
+
+            tempVideo.src = blobUrl;
+            tempVideo.addEventListener('loadeddata', () => {
+              tempVideo.currentTime = currentTime;
+            });
+          });
+
+          setPreview(result);
+        } finally {
+          URL.revokeObjectURL(blobUrl);
+        }
+      } catch {
+        setError('프레임 캡처에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setCapturing(false);
     }
@@ -54,12 +103,11 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
 
         <div className="rounded-lg overflow-hidden bg-black">
           <video
-            ref={initVideo}
+            ref={videoRef}
             src={videoSrc}
             controls
             muted
             preload="auto"
-            crossOrigin="anonymous"
             onLoadedData={() => setVideoReady(true)}
             className="w-full max-h-[400px]"
           />

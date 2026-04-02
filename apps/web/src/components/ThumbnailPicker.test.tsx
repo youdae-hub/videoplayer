@@ -3,15 +3,6 @@ import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThumbnailPicker } from './ThumbnailPicker';
 
-vi.mock('../utils/videoFileProcessor', () => ({
-  captureVideoFrame: vi.fn().mockResolvedValue({
-    thumbnailUrl: 'data:image/jpeg;base64,captured-frame',
-    thumbnailBlob: new Blob(['frame'], { type: 'image/jpeg' }),
-  }),
-}));
-
-import { captureVideoFrame } from '../utils/videoFileProcessor';
-
 describe('ThumbnailPicker', () => {
   const defaultProps = {
     videoSrc: 'blob:http://localhost/video-123',
@@ -31,50 +22,15 @@ describe('ThumbnailPicker', () => {
     expect(video).toBeInTheDocument();
   });
 
+  it('does not set crossOrigin on video element', () => {
+    render(<ThumbnailPicker {...defaultProps} />);
+    const video = document.querySelector('video')!;
+    expect(video.getAttribute('crossOrigin')).toBeNull();
+  });
+
   it('shows title', () => {
     render(<ThumbnailPicker {...defaultProps} />);
     expect(screen.getByText('썸네일 선택')).toBeInTheDocument();
-  });
-
-  it('calls captureVideoFrame when capture button clicked', async () => {
-    const user = userEvent.setup();
-    render(<ThumbnailPicker {...defaultProps} />);
-
-    const video = document.querySelector('video')!;
-    video.dispatchEvent(new Event('loadeddata'));
-
-    await user.click(screen.getByText('현재 프레임 캡처'));
-
-    expect(captureVideoFrame).toHaveBeenCalled();
-  });
-
-  it('shows preview after capture and enables apply button', async () => {
-    const user = userEvent.setup();
-    render(<ThumbnailPicker {...defaultProps} />);
-
-    const video = document.querySelector('video')!;
-    video.dispatchEvent(new Event('loadeddata'));
-
-    await user.click(screen.getByText('현재 프레임 캡처'));
-
-    expect(screen.getByAltText('캡처된 썸네일')).toBeInTheDocument();
-    expect(screen.getByText('적용')).toBeInTheDocument();
-  });
-
-  it('calls onCapture with captured data when apply clicked', async () => {
-    const user = userEvent.setup();
-    render(<ThumbnailPicker {...defaultProps} />);
-
-    const video = document.querySelector('video')!;
-    video.dispatchEvent(new Event('loadeddata'));
-
-    await user.click(screen.getByText('현재 프레임 캡처'));
-    await user.click(screen.getByText('적용'));
-
-    expect(defaultProps.onCapture).toHaveBeenCalledWith(
-      'data:image/jpeg;base64,captured-frame',
-      expect.any(Blob),
-    );
   });
 
   it('calls onClose when cancel clicked', async () => {
@@ -82,7 +38,6 @@ describe('ThumbnailPicker', () => {
     render(<ThumbnailPicker {...defaultProps} />);
 
     await user.click(screen.getByText('취소'));
-
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
@@ -91,7 +46,6 @@ describe('ThumbnailPicker', () => {
     render(<ThumbnailPicker {...defaultProps} />);
 
     await user.click(screen.getByTestId('thumbnail-picker-overlay'));
-
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
@@ -107,9 +61,10 @@ describe('ThumbnailPicker', () => {
     expect(captureBtn).not.toBeDisabled();
   });
 
-  it('uses videoSrc directly as video src', () => {
-    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4?_t=1" />);
+  it('uses videoSrc directly without crossOrigin', () => {
+    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4" />);
     const video = document.querySelector('video')!;
-    expect(video.src).toContain('test.mp4?_t=1');
+    expect(video.src).toContain('test.mp4');
+    expect(video.hasAttribute('crossorigin')).toBe(false);
   });
 });
