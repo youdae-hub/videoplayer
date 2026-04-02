@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 interface ThumbnailPickerProps {
   videoSrc: string;
@@ -34,17 +34,6 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
   const [videoReady, setVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Explicitly release video decoder on unmount
-  useEffect(() => {
-    const video = videoRef.current;
-    return () => {
-      if (video) {
-        video.pause();
-        video.removeAttribute('src');
-        video.load();
-      }
-    };
-  }, []);
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
