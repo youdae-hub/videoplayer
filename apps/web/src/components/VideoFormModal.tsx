@@ -36,6 +36,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
+  const [pickerKey, setPickerKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!video;
@@ -189,7 +190,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                       {videoUrl && (
                         <button
                           type="button"
-                          onClick={() => setShowThumbnailPicker(true)}
+                          onClick={() => { setPickerKey((k) => k + 1); setShowThumbnailPicker(true); }}
                           className="mt-1 rounded bg-neutral-700 px-2 py-1 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                         >
                           썸네일 변경
@@ -257,7 +258,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                       {videoUrl && (
                         <button
                           type="button"
-                          onClick={() => setShowThumbnailPicker(true)}
+                          onClick={() => { setPickerKey((k) => k + 1); setShowThumbnailPicker(true); }}
                           className="self-start rounded bg-neutral-700 px-2 py-1 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                         >
                           썸네일 변경
@@ -277,7 +278,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                     {videoUrl && (
                       <button
                         type="button"
-                        onClick={() => setShowThumbnailPicker(true)}
+                        onClick={() => { setPickerKey((k) => k + 1); setShowThumbnailPicker(true); }}
                         className="shrink-0 rounded bg-neutral-700 px-2 py-2 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                       >
                         썸네일 변경
@@ -368,6 +369,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
 
       {showThumbnailPicker && videoUrl && (
         <ThumbnailPicker
+          key={pickerKey}
           videoSrc={videoUrl}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);

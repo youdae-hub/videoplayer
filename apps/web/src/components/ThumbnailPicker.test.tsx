@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThumbnailPicker } from './ThumbnailPicker';
 
@@ -41,6 +41,9 @@ describe('ThumbnailPicker', () => {
     const user = userEvent.setup();
     render(<ThumbnailPicker {...defaultProps} />);
 
+    const video = document.querySelector('video')!;
+    video.dispatchEvent(new Event('loadeddata'));
+
     await user.click(screen.getByText('현재 프레임 캡처'));
 
     expect(captureVideoFrame).toHaveBeenCalled();
@@ -49,6 +52,9 @@ describe('ThumbnailPicker', () => {
   it('shows preview after capture and enables apply button', async () => {
     const user = userEvent.setup();
     render(<ThumbnailPicker {...defaultProps} />);
+
+    const video = document.querySelector('video')!;
+    video.dispatchEvent(new Event('loadeddata'));
 
     await user.click(screen.getByText('현재 프레임 캡처'));
 
@@ -60,6 +66,9 @@ describe('ThumbnailPicker', () => {
     const user = userEvent.setup();
     render(<ThumbnailPicker {...defaultProps} />);
 
+    const video = document.querySelector('video')!;
+    video.dispatchEvent(new Event('loadeddata'));
+
     await user.click(screen.getByText('현재 프레임 캡처'));
     await user.click(screen.getByText('적용'));
 
@@ -67,6 +76,18 @@ describe('ThumbnailPicker', () => {
       'data:image/jpeg;base64,captured-frame',
       expect.any(Blob),
     );
+  });
+
+  it('disables capture button until video is ready', () => {
+    render(<ThumbnailPicker {...defaultProps} />);
+    const captureBtn = screen.getByText('현재 프레임 캡처');
+    expect(captureBtn).toBeDisabled();
+
+    const video = document.querySelector('video')!;
+    act(() => {
+      video.dispatchEvent(new Event('loadeddata'));
+    });
+    expect(captureBtn).not.toBeDisabled();
   });
 
   it('calls onClose when cancel clicked', async () => {

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { captureVideoFrame } from '../utils/videoFileProcessor';
 
 interface ThumbnailPickerProps {
@@ -11,6 +11,15 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
   const videoRef = useRef<HTMLVideoElement>(null);
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  const cacheBustedSrc = videoSrc.startsWith('blob:')
+    ? videoSrc
+    : `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}t=${Date.now()}`;
+
+  const handleVideoReady = useCallback(() => {
+    setVideoReady(true);
+  }, []);
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
@@ -43,19 +52,25 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
         <div className="rounded-lg overflow-hidden bg-black">
           <video
             ref={videoRef}
-            src={videoSrc}
+            src={cacheBustedSrc}
             controls
             muted
+            preload="auto"
             crossOrigin="anonymous"
+            onLoadedData={handleVideoReady}
             className="w-full max-h-[400px]"
           />
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
+        <p className="mt-2 text-xs text-neutral-500">
+          동영상을 재생하거나 시크바를 이동하여 원하는 장면을 선택한 후 캡처 버튼을 누르세요.
+        </p>
+
+        <div className="mt-3 flex items-center gap-3">
           <button
             type="button"
             onClick={handleCapture}
-            disabled={capturing}
+            disabled={capturing || !videoReady}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
           >
             {capturing ? '캡처 중...' : '현재 프레임 캡처'}
