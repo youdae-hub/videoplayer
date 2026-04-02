@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import type { Video } from '@videoplayer/core';
 import { formatTime } from '@videoplayer/core';
 import type { VideoInput } from '../services/types';
@@ -36,34 +36,44 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
+  const [fetchedVideoBlob, setFetchedVideoBlob] = useState<Blob | null>(null);
   const [fetchingVideo, setFetchingVideo] = useState(false);
-  const [pickerVideoSrc, setPickerVideoSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!video;
 
+  // Single blob URL: created once per videoFile or fetchedVideoBlob change
+  const previewBlobUrl = useMemo(() => {
+    const source = videoFile ?? fetchedVideoBlob;
+    if (!source) return null;
+    return URL.createObjectURL(source);
+  }, [videoFile, fetchedVideoBlob]);
+
+  // Revoke only when the source changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+    };
+  }, [previewBlobUrl]);
+
   const handleOpenThumbnailPicker = useCallback(async () => {
     if (fetchingVideo) return;
 
-    if (!pickerVideoSrc) {
-      if (videoFile) {
-        setPickerVideoSrc(URL.createObjectURL(videoFile));
-      } else {
-        setFetchingVideo(true);
-        try {
-          const res = await fetch(videoUrl);
-          const blob = await res.blob();
-          setPickerVideoSrc(URL.createObjectURL(blob));
-        } catch {
-          setFetchingVideo(false);
-          return;
-        }
+    // For remote URLs without a local file, fetch once and cache the blob
+    if (!videoFile && !fetchedVideoBlob) {
+      setFetchingVideo(true);
+      try {
+        const res = await fetch(videoUrl);
+        setFetchedVideoBlob(await res.blob());
+      } catch {
         setFetchingVideo(false);
+        return;
       }
+      setFetchingVideo(false);
     }
 
     setShowThumbnailPicker(true);
-  }, [fetchingVideo, videoUrl, videoFile, pickerVideoSrc]);
+  }, [fetchingVideo, videoUrl, videoFile, fetchedVideoBlob]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,11 +85,11 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
 
     try {
       const result = await processVideoFile(file);
-      setVideoUrl(result.videoUrl);
+      setVideoFile(file);
       setThumbnailUrl(result.thumbnailUrl);
       setDuration(result.duration);
-      setVideoFile(file);
       setThumbnailBlob(result.thumbnailBlob);
+      setFetchedVideoBlob(null);
       if (!title) {
         setTitle(file.name.replace(/\.[^.]+$/, ''));
       }
@@ -107,7 +117,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !videoUrl.trim()) {
+    const submitUrl = videoFile ? (previewBlobUrl ?? '') : videoUrl;
+    if (!title.trim() || !submitUrl.trim()) {
       setError('제목과 동영상 URL은 필수입니다.');
       return;
     }
@@ -115,7 +126,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
     setError(null);
     try {
       await onSubmit({
-        title, description, videoUrl, thumbnailUrl, duration, subtitles,
+        title, description, videoUrl: submitUrl, thumbnailUrl, duration, subtitles,
         ...(videoFile && { videoFile }),
         ...(thumbnailBlob && { thumbnailBlob }),
       });
@@ -124,6 +135,8 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       setLoading(false);
     }
   };
+
+  const videoSrcForDisplay = previewBlobUrl || videoUrl;
 
   const inputClass = 'mt-1 w-full rounded-md bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none';
 
@@ -211,7 +224,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                     <div className="text-xs text-neutral-400 space-y-1">
                       <div>재생 시간: <span className="text-white">{formatTime(duration)}</span></div>
                       {fileName && <div>파일: <span className="text-white">{fileName}</span></div>}
-                      {videoUrl && (
+                      {videoFile && (
                         <button
                           type="button"
                           onClick={handleOpenThumbnailPicker}
@@ -305,10 +318,10 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
                       <button
                         type="button"
                         onClick={handleOpenThumbnailPicker}
-                          disabled={fetchingVideo}
+                        disabled={fetchingVideo}
                         className="shrink-0 rounded bg-neutral-700 px-2 py-2 text-xs text-blue-400 hover:bg-neutral-600 transition-colors"
                       >
-                        썸네일 변경
+                        {fetchingVideo ? '로딩 중...' : '썸네일 변경'}
                       </button>
                     )}
                   </div>
@@ -394,10 +407,10 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
         </form>
       </div>
 
-      {(pickerVideoSrc || videoUrl) && (
+      {videoSrcForDisplay && (
         <ThumbnailPicker
           isOpen={showThumbnailPicker}
-          videoSrc={pickerVideoSrc || videoUrl}
+          videoSrc={videoSrcForDisplay}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);
             setThumbnailBlob(blob);

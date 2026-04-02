@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { processVideoFile, revokeVideoUrl, captureVideoFrame } from './videoFileProcessor';
+import { processVideoFile, captureVideoFrame } from './videoFileProcessor';
 
 describe('processVideoFile', () => {
   let mockVideo: Record<string, unknown>;
@@ -53,21 +53,31 @@ describe('processVideoFile', () => {
     vi.restoreAllMocks();
   });
 
-  it('resolves with processed file data', async () => {
+  it('resolves with processed file data without videoUrl', async () => {
     const file = new File(['video-data'], 'test.mp4', { type: 'video/mp4' });
 
     const promise = processVideoFile(file);
 
-    // Simulate video loading
     listeners.loadedmetadata.forEach((fn) => fn());
     listeners.seeked.forEach((fn) => fn());
 
     const result = await promise;
     expect(result.file).toBe(file);
-    expect(result.videoUrl).toBe('blob:http://localhost/video-123');
+    expect(result).not.toHaveProperty('videoUrl');
     expect(result.thumbnailUrl).toBe('data:image/jpeg;base64,thumbnail');
     expect(result.thumbnailBlob).toBeInstanceOf(Blob);
     expect(result.duration).toBe(120);
+  });
+
+  it('revokes temp blob URL after processing', async () => {
+    const file = new File(['video-data'], 'test.mp4', { type: 'video/mp4' });
+
+    const promise = processVideoFile(file);
+    listeners.loadedmetadata.forEach((fn) => fn());
+    listeners.seeked.forEach((fn) => fn());
+
+    await promise;
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/video-123');
   });
 
   it('sets currentTime for thumbnail capture', async () => {
@@ -81,7 +91,7 @@ describe('processVideoFile', () => {
     expect(mockVideo.currentTime).toBe(2);
   });
 
-  it('rejects on video error', async () => {
+  it('rejects on video error and revokes temp URL', async () => {
     const file = new File(['bad-data'], 'bad.mp4', { type: 'video/mp4' });
 
     const promise = processVideoFile(file);
@@ -183,23 +193,5 @@ describe('captureVideoFrame', () => {
     } as HTMLVideoElement;
 
     await expect(captureVideoFrame(mockVideo)).rejects.toThrow('썸네일 Blob 생성에 실패했습니다.');
-  });
-});
-
-describe('revokeVideoUrl', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('revokes blob URLs', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    revokeVideoUrl('blob:http://localhost/video-123');
-    expect(revokeSpy).toHaveBeenCalledWith('blob:http://localhost/video-123');
-  });
-
-  it('ignores non-blob URLs', () => {
-    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    revokeVideoUrl('https://example.com/video.mp4');
-    expect(revokeSpy).not.toHaveBeenCalled();
   });
 });

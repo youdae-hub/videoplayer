@@ -7,7 +7,6 @@ import type { Video } from '@videoplayer/core';
 vi.mock('../utils/videoFileProcessor', () => ({
   processVideoFile: vi.fn().mockResolvedValue({
     file: new File(['data'], 'test.mp4', { type: 'video/mp4' }),
-    videoUrl: 'blob:http://localhost/video-123',
     thumbnailUrl: 'data:image/jpeg;base64,thumb',
     thumbnailBlob: new Blob(['thumb'], { type: 'image/jpeg' }),
     duration: 90,

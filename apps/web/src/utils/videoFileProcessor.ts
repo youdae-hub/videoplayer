@@ -1,6 +1,5 @@
 export interface ProcessedVideoFile {
   file: File;
-  videoUrl: string;
   thumbnailUrl: string;
   thumbnailBlob: Blob;
   duration: number;
@@ -11,7 +10,7 @@ const THUMBNAIL_WIDTH = 320;
 
 export function processVideoFile(file: File): Promise<ProcessedVideoFile> {
   return new Promise((resolve, reject) => {
-    const videoUrl = URL.createObjectURL(file);
+    const tempUrl = URL.createObjectURL(file);
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.muted = true;
@@ -20,11 +19,11 @@ export function processVideoFile(file: File): Promise<ProcessedVideoFile> {
     const cleanup = () => {
       video.removeAttribute('src');
       video.load();
+      URL.revokeObjectURL(tempUrl);
     };
 
     video.addEventListener('error', () => {
       cleanup();
-      URL.revokeObjectURL(videoUrl);
       reject(new Error('동영상 파일을 읽을 수 없습니다.'));
     });
 
@@ -39,16 +38,15 @@ export function processVideoFile(file: File): Promise<ProcessedVideoFile> {
       captureVideoFrame(video, THUMBNAIL_WIDTH)
         .then(({ thumbnailUrl, thumbnailBlob }) => {
           cleanup();
-          resolve({ file, videoUrl, thumbnailUrl, thumbnailBlob, duration });
+          resolve({ file, thumbnailUrl, thumbnailBlob, duration });
         })
         .catch(() => {
           cleanup();
-          URL.revokeObjectURL(videoUrl);
           reject(new Error('썸네일 생성에 실패했습니다.'));
         });
     });
 
-    video.src = videoUrl;
+    video.src = tempUrl;
   });
 }
 
