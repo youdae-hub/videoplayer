@@ -116,8 +116,12 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
     },
 
     async updateVideo(id: string, input: VideoInput): Promise<Video> {
-      let videoUrl = input.videoUrl;
-      let thumbnailUrl = input.thumbnailUrl;
+      // Strip baseUrl prefix so the DB stores relative paths (e.g. /uploads/...)
+      const stripBase = (url: string) =>
+        url.startsWith(serverUrl) ? url.slice(serverUrl.length) : url;
+
+      let videoUrl = stripBase(input.videoUrl);
+      let thumbnailUrl = stripBase(input.thumbnailUrl);
 
       if (input.videoFile) {
         videoUrl = await uploadFile(input.videoFile);
