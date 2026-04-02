@@ -107,15 +107,9 @@ describe('ThumbnailPicker', () => {
     expect(captureBtn).not.toBeDisabled();
   });
 
-  it('adds cache-busting param for server URLs', () => {
-    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4" />);
+  it('uses videoSrc directly as video src', () => {
+    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4?_t=1" />);
     const video = document.querySelector('video')!;
-    expect(video.src).toContain('test.mp4?_t=');
-  });
-
-  it('does not add cache-busting for blob URLs', () => {
-    render(<ThumbnailPicker {...defaultProps} />);
-    const video = document.querySelector('video')!;
-    expect(video.src).toBe('blob:http://localhost/video-123');
+    expect(video.src).toContain('test.mp4?_t=1');
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { captureVideoFrame } from '../utils/videoFileProcessor';
 
 interface ThumbnailPickerProps {
@@ -12,22 +12,24 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const uniqueSrc = useMemo(() => {
-    if (videoSrc.startsWith('blob:') || videoSrc.startsWith('data:')) return videoSrc;
-    return `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}_t=${Date.now()}`;
-  }, [videoSrc]);
-
-  const handleVideoReady = useCallback(() => {
-    setVideoReady(true);
+  const initVideo = useCallback((el: HTMLVideoElement | null) => {
+    videoRef.current = el;
+    if (el) {
+      el.load();
+    }
   }, []);
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
     setCapturing(true);
+    setError(null);
     try {
       const { thumbnailUrl, thumbnailBlob } = await captureVideoFrame(videoRef.current);
       setPreview({ url: thumbnailUrl, blob: thumbnailBlob });
+    } catch {
+      setError('프레임 캡처에 실패했습니다. 동영상을 재생한 후 다시 시도해주세요.');
     } finally {
       setCapturing(false);
     }
@@ -52,13 +54,13 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
 
         <div className="rounded-lg overflow-hidden bg-black">
           <video
-            ref={videoRef}
-            src={uniqueSrc}
+            ref={initVideo}
+            src={videoSrc}
             controls
             muted
             preload="auto"
             crossOrigin="anonymous"
-            onLoadedData={handleVideoReady}
+            onLoadedData={() => setVideoReady(true)}
             className="w-full max-h-[400px]"
           />
         </div>
@@ -66,6 +68,10 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
         <p className="mt-2 text-xs text-neutral-500">
           동영상을 재생하거나 시크바를 이동하여 원하는 장면을 선택한 후 캡처 버튼을 누르세요.
         </p>
+
+        {error && (
+          <p className="mt-2 text-xs text-red-400">{error}</p>
+        )}
 
         <div className="mt-3 flex items-center gap-3">
           <button
