@@ -64,12 +64,13 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       setFetchingVideo(true);
       try {
         const res = await fetch(videoUrl);
+        if (!res.ok) throw new Error();
         setFetchedVideoBlob(await res.blob());
       } catch {
+        // Fetch failed - still open picker with raw videoUrl as fallback
+      } finally {
         setFetchingVideo(false);
-        return;
       }
-      setFetchingVideo(false);
     }
 
     setShowThumbnailPicker(true);
@@ -409,6 +410,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
 
       {showThumbnailPicker && videoSrcForDisplay && (
         <ThumbnailPicker
+          key={videoSrcForDisplay}
           videoSrc={videoSrcForDisplay}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);
