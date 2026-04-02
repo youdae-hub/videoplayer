@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface ThumbnailPickerProps {
+  isOpen: boolean;
   videoSrc: string;
   onCapture: (thumbnailUrl: string, thumbnailBlob: Blob) => void;
   onClose: () => void;
@@ -27,12 +28,19 @@ function captureFromVideo(video: HTMLVideoElement): Promise<{ thumbnailUrl: stri
   });
 }
 
-export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
+export function ThumbnailPicker({ isOpen, videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPreview(null);
+      setError(null);
+    }
+  }, [isOpen]);
 
   const handleCapture = async () => {
     if (!videoRef.current) return;
@@ -53,6 +61,8 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
     if (!preview) return;
     onCapture(preview.url, preview.blob);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div

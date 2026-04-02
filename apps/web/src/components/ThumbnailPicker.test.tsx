@@ -5,6 +5,7 @@ import { ThumbnailPicker } from './ThumbnailPicker';
 
 describe('ThumbnailPicker', () => {
   const defaultProps = {
+    isOpen: true,
     videoSrc: 'blob:http://localhost/video-123',
     onCapture: vi.fn(),
     onClose: vi.fn(),
@@ -14,12 +15,17 @@ describe('ThumbnailPicker', () => {
     vi.clearAllMocks();
   });
 
-  it('renders video element and capture button', () => {
+  it('renders video element and capture button when open', () => {
     render(<ThumbnailPicker {...defaultProps} />);
     expect(screen.getByText('현재 프레임 캡처')).toBeInTheDocument();
     expect(screen.getByText('취소')).toBeInTheDocument();
     const video = document.querySelector('video');
     expect(video).toBeInTheDocument();
+  });
+
+  it('renders nothing when closed', () => {
+    render(<ThumbnailPicker {...defaultProps} isOpen={false} />);
+    expect(screen.queryByText('썸네일 선택')).not.toBeInTheDocument();
   });
 
   it('does not set crossOrigin on video element', () => {
@@ -61,10 +67,12 @@ describe('ThumbnailPicker', () => {
     expect(captureBtn).not.toBeDisabled();
   });
 
-  it('uses videoSrc directly without crossOrigin', () => {
-    render(<ThumbnailPicker {...defaultProps} videoSrc="http://localhost:4000/uploads/videos/test.mp4" />);
-    const video = document.querySelector('video')!;
-    expect(video.src).toContain('test.mp4');
-    expect(video.hasAttribute('crossorigin')).toBe(false);
+  it('resets preview when reopened', () => {
+    const { rerender } = render(<ThumbnailPicker {...defaultProps} />);
+    // Close
+    rerender(<ThumbnailPicker {...defaultProps} isOpen={false} />);
+    // Reopen
+    rerender(<ThumbnailPicker {...defaultProps} isOpen={true} />);
+    expect(screen.queryByText('캡처된 썸네일 미리보기')).not.toBeInTheDocument();
   });
 });
