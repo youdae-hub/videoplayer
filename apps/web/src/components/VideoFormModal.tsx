@@ -38,6 +38,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
   const [pickerKey, setPickerKey] = useState(0);
   const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
+  const [cachedVideoBlob, setCachedVideoBlob] = useState<Blob | null>(null);
   const [fetchingVideo, setFetchingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,29 +53,38 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const handleOpenThumbnailPicker = useCallback(async () => {
     if (fetchingVideo) return;
 
-    if (videoUrl.startsWith('blob:')) {
-      setPickerKey((k) => k + 1);
-      setShowThumbnailPicker(true);
-      return;
+    // Revoke previous blob URL before creating a new one
+    if (videoBlobUrl) {
+      URL.revokeObjectURL(videoBlobUrl);
     }
 
-    if (!videoBlobUrl) {
+    let newBlobUrl: string;
+
+    if (videoFile) {
+      // File upload: create fresh blob URL from the File object each time
+      newBlobUrl = URL.createObjectURL(videoFile);
+    } else if (cachedVideoBlob) {
+      // Remote URL already fetched: create fresh blob URL from cached blob
+      newBlobUrl = URL.createObjectURL(cachedVideoBlob);
+    } else {
+      // Remote URL first time: fetch and cache the blob
       setFetchingVideo(true);
       try {
         const res = await fetch(videoUrl);
         const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        setVideoBlobUrl(blobUrl);
+        setCachedVideoBlob(blob);
+        newBlobUrl = URL.createObjectURL(blob);
       } catch {
-        setVideoBlobUrl(null);
-      } finally {
         setFetchingVideo(false);
+        return;
       }
+      setFetchingVideo(false);
     }
 
+    setVideoBlobUrl(newBlobUrl);
     setPickerKey((k) => k + 1);
     setShowThumbnailPicker(true);
-  }, [fetchingVideo, videoUrl, videoBlobUrl]);
+  }, [fetchingVideo, videoUrl, videoFile, videoBlobUrl, cachedVideoBlob]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
