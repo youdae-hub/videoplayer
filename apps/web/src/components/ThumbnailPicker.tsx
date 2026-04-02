@@ -41,7 +41,7 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
 
     try {
       const result = await captureFromVideo(videoRef.current);
-      setPreview(result);
+      setPreview({ url: result.thumbnailUrl, blob: result.thumbnailBlob });
     } catch {
       setError('프레임 캡처에 실패했습니다. 다시 시도해주세요.');
     } finally {
