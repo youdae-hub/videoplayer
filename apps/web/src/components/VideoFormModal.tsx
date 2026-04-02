@@ -37,42 +37,44 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [showThumbnailPicker, setShowThumbnailPicker] = useState(false);
   const [pickerKey, setPickerKey] = useState(0);
-  const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
-  const [cachedVideoBlob, setCachedVideoBlob] = useState<Blob | null>(null);
+  const [pickerVideoSrc, setPickerVideoSrc] = useState<string | null>(null);
   const [fetchingVideo, setFetchingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoBlobUrlRef = useRef<string | null>(null);
+  const cachedVideoBlobRef = useRef<Blob | null>(null);
 
   const isEdit = !!video;
 
   useEffect(() => {
     return () => {
-      if (videoBlobUrl) URL.revokeObjectURL(videoBlobUrl);
+      if (videoBlobUrlRef.current) {
+        URL.revokeObjectURL(videoBlobUrlRef.current);
+        videoBlobUrlRef.current = null;
+      }
     };
-  }, [videoBlobUrl]);
+  }, []);
 
   const handleOpenThumbnailPicker = useCallback(async () => {
     if (fetchingVideo) return;
 
-    // Revoke previous blob URL before creating a new one
-    if (videoBlobUrl) {
-      URL.revokeObjectURL(videoBlobUrl);
+    // Revoke previous blob URL
+    if (videoBlobUrlRef.current) {
+      URL.revokeObjectURL(videoBlobUrlRef.current);
+      videoBlobUrlRef.current = null;
     }
 
     let newBlobUrl: string;
 
     if (videoFile) {
-      // File upload: create fresh blob URL from the File object each time
       newBlobUrl = URL.createObjectURL(videoFile);
-    } else if (cachedVideoBlob) {
-      // Remote URL already fetched: create fresh blob URL from cached blob
-      newBlobUrl = URL.createObjectURL(cachedVideoBlob);
+    } else if (cachedVideoBlobRef.current) {
+      newBlobUrl = URL.createObjectURL(cachedVideoBlobRef.current);
     } else {
-      // Remote URL first time: fetch and cache the blob
       setFetchingVideo(true);
       try {
         const res = await fetch(videoUrl);
         const blob = await res.blob();
-        setCachedVideoBlob(blob);
+        cachedVideoBlobRef.current = blob;
         newBlobUrl = URL.createObjectURL(blob);
       } catch {
         setFetchingVideo(false);
@@ -81,10 +83,11 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       setFetchingVideo(false);
     }
 
-    setVideoBlobUrl(newBlobUrl);
+    videoBlobUrlRef.current = newBlobUrl;
+    setPickerVideoSrc(newBlobUrl);
     setPickerKey((k) => k + 1);
     setShowThumbnailPicker(true);
-  }, [fetchingVideo, videoUrl, videoFile, videoBlobUrl, cachedVideoBlob]);
+  }, [fetchingVideo, videoUrl, videoFile]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -418,7 +421,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
       {showThumbnailPicker && videoUrl && (
         <ThumbnailPicker
           key={pickerKey}
-          videoSrc={videoBlobUrl || videoUrl}
+          videoSrc={pickerVideoSrc || videoUrl}
           onCapture={(url, blob) => {
             setThumbnailUrl(url);
             setThumbnailBlob(blob);
