@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { captureVideoFrame } from '../utils/videoFileProcessor';
 
 interface ThumbnailPickerProps {
@@ -9,42 +9,13 @@ interface ThumbnailPickerProps {
 
 export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const blobUrlRef = useRef<string | null>(null);
   const [preview, setPreview] = useState<{ url: string; blob: Blob } | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (videoSrc.startsWith('blob:') || videoSrc.startsWith('data:')) {
-      setBlobUrl(videoSrc);
-      return;
-    }
-
-    const fetchUrl = `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}_t=${Date.now()}`;
-
-    fetch(fetchUrl, { cache: 'no-store' })
-      .then((res) => res.blob())
-      .then((blob) => {
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        blobUrlRef.current = url;
-        setBlobUrl(url);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
-      });
-
-    return () => {
-      cancelled = true;
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
+  const uniqueSrc = useMemo(() => {
+    if (videoSrc.startsWith('blob:') || videoSrc.startsWith('data:')) return videoSrc;
+    return `${videoSrc}${videoSrc.includes('?') ? '&' : '?'}_t=${Date.now()}`;
   }, [videoSrc]);
 
   const handleVideoReady = useCallback(() => {
@@ -80,25 +51,16 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
         <h2 className="text-lg font-bold text-white mb-4">썸네일 선택</h2>
 
         <div className="rounded-lg overflow-hidden bg-black">
-          {loadError ? (
-            <div className="flex items-center justify-center h-48 text-sm text-red-400">
-              동영상을 로드할 수 없습니다.
-            </div>
-          ) : blobUrl ? (
-            <video
-              ref={videoRef}
-              src={blobUrl}
-              controls
-              muted
-              preload="auto"
-              onLoadedData={handleVideoReady}
-              className="w-full max-h-[400px]"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-48 text-sm text-neutral-500">
-              동영상 로딩 중...
-            </div>
-          )}
+          <video
+            ref={videoRef}
+            src={uniqueSrc}
+            controls
+            muted
+            preload="auto"
+            crossOrigin="anonymous"
+            onLoadedData={handleVideoReady}
+            className="w-full max-h-[400px]"
+          />
         </div>
 
         <p className="mt-2 text-xs text-neutral-500">
