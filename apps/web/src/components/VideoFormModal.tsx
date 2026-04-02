@@ -131,7 +131,7 @@ export function VideoFormModal({ video, onSubmit, onClose }: VideoFormModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitUrl = previewBlobUrl || videoUrl;
+    const submitUrl = videoFile ? (previewBlobUrl || videoUrl) : videoUrl;
     if (!title.trim() || !submitUrl.trim()) {
       setError('제목과 동영상 URL은 필수입니다.');
       return;
