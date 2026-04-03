@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { videoRouter } from './routes/video.js';
 import { uploadRouter } from './routes/upload.js';
 import { subtitleRouter } from './routes/subtitle.js';
+import { gifRouter } from './routes/gif.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,6 +19,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 app.use('/api/videos', videoRouter);
 app.use('/api/subtitles', subtitleRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/gif', gifRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

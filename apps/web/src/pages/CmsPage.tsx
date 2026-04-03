@@ -6,6 +6,7 @@ import type { VideoInput, SupportedLanguage } from '../services/types';
 import { VideoFormModal } from '../components/VideoFormModal';
 import { SubtitleEditor } from '../components/SubtitleEditor';
 import { GifExtractor } from '../components/GifExtractor';
+import { YoutubeGifExtractor } from '../components/YoutubeGifExtractor';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
 import type { Subtitle } from '@videoplayer/core';
@@ -179,6 +180,7 @@ export function CmsPage() {
   const [languages, setLanguages] = useState<SupportedLanguage[]>([]);
   const [editSubtitleTarget, setEditSubtitleTarget] = useState<{ video: Video; subtitle: Subtitle } | null>(null);
   const [gifTarget, setGifTarget] = useState<Video | null>(null);
+  const [showYoutubeGif, setShowYoutubeGif] = useState(false);
   const blobUrlsRef = useRef<string[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -298,6 +300,14 @@ export function CmsPage() {
           >
             + 동영상 추가
           </button>
+          {videoService.downloadYoutubeGif && (
+            <button
+              onClick={() => setShowYoutubeGif(true)}
+              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
+            >
+              YouTube GIF
+            </button>
+          )}
           <span className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400">
             {apiMode === 'strapi' ? 'Strapi' : apiMode === 'custom' ? 'Custom' : 'Mock'} Mode
           </span>
@@ -453,6 +463,13 @@ export function CmsPage() {
           videoTitle={gifTarget.title}
           getGifUrl={videoService.getGifUrl.bind(videoService)}
           onClose={() => setGifTarget(null)}
+        />
+      )}
+
+      {showYoutubeGif && videoService.downloadYoutubeGif && (
+        <YoutubeGifExtractor
+          downloadYoutubeGif={videoService.downloadYoutubeGif.bind(videoService)}
+          onClose={() => setShowYoutubeGif(false)}
         />
       )}
     </div>

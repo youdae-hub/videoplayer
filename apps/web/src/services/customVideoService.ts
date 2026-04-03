@@ -176,5 +176,18 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
       if (width) params.set('width', String(width));
       return `${serverUrl}/api/videos/${id}/gif?${params}`;
     },
+
+    async downloadYoutubeGif(url: string, start: number, end: number, width?: number): Promise<Blob> {
+      const res = await fetch(`${serverUrl}/api/gif/from-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, start, end, width: width || 480 }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(body.error || `Failed with status ${res.status}`);
+      }
+      return res.blob();
+    },
   };
 }
