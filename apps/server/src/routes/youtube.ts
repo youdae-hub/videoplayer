@@ -233,22 +233,19 @@ youtubeRouter.post('/subtitles', async (req, res) => {
       });
     });
 
-    const subtitles: { code: string; label: string; auto: boolean }[] = [];
-    let inSubSection = false;
-    let isAutoSection = false;
+    const subtitles: { code: string; label: string }[] = [];
+    let inManualSection = false;
 
     for (const line of output.split('\n')) {
       if (line.includes('Available subtitles')) {
-        inSubSection = true;
-        isAutoSection = false;
+        inManualSection = true;
         continue;
       }
       if (line.includes('Available automatic captions')) {
-        inSubSection = true;
-        isAutoSection = true;
+        inManualSection = false;
         continue;
       }
-      if (!inSubSection) continue;
+      if (!inManualSection) continue;
       if (line.startsWith('Language') || line.startsWith('---') || line.trim() === '') continue;
 
       const match = line.match(/^(\S+)\s+(.+)/);
@@ -256,7 +253,7 @@ youtubeRouter.post('/subtitles', async (req, res) => {
         const code = match[1];
         const label = match[2].split(/\s{2,}/)[0].trim();
         if (!subtitles.find((s) => s.code === code)) {
-          subtitles.push({ code, label, auto: isAutoSection });
+          subtitles.push({ code, label });
         }
       }
     }
@@ -298,7 +295,6 @@ youtubeRouter.post('/subtitles/download', async (req, res) => {
     await new Promise<void>((resolve, reject) => {
       execFile('yt-dlp', [
         '--write-sub',
-        '--write-auto-sub',
         '--sub-lang', lang,
         '--sub-format', 'vtt',
         '--convert-subs', 'vtt',

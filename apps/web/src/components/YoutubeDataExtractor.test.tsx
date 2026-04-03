@@ -8,8 +8,8 @@ describe('YoutubeDataExtractor', () => {
     downloadYoutubeGif: vi.fn().mockResolvedValue(new Blob(['gif'], { type: 'image/gif' })),
     downloadYoutubeVideo: vi.fn().mockResolvedValue(new Blob(['mp4'], { type: 'video/mp4' })),
     listYoutubeSubtitles: vi.fn().mockResolvedValue([
-      { code: 'ko', label: 'Korean', auto: false },
-      { code: 'en', label: 'English', auto: true },
+      { code: 'ko', label: 'Korean' },
+      { code: 'en', label: 'English' },
     ]),
     downloadYoutubeSubtitle: vi.fn().mockResolvedValue(new Blob(['WEBVTT'], { type: 'text/vtt' })),
     onClose: vi.fn(),

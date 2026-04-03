@@ -203,7 +203,7 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
       return res.blob();
     },
 
-    async listYoutubeSubtitles(url: string): Promise<{ code: string; label: string; auto: boolean }[]> {
+    async listYoutubeSubtitles(url: string): Promise<{ code: string; label: string }[]> {
       const res = await fetch(`${serverUrl}/api/youtube/subtitles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

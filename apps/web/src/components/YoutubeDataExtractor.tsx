@@ -95,7 +95,6 @@ const TAB_ITEMS: { key: Tab; label: string }[] = [
 interface SubtitleItem {
   code: string;
   label: string;
-  auto: boolean;
 }
 
 export function YoutubeDataExtractor({
@@ -480,9 +479,6 @@ export function YoutubeDataExtractor({
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-white">{sub.label}</span>
                         <span className="text-xs text-neutral-500">{sub.code}</span>
-                        {sub.auto && (
-                          <span className="rounded-full bg-yellow-900/30 px-2 py-0.5 text-xs text-yellow-400">자동</span>
-                        )}
                       </div>
                       <button
                         type="button"

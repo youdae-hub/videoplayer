@@ -138,7 +138,7 @@ describe('YouTube API', () => {
       expect(res.body.error).toBe('Invalid URL format');
     });
 
-    it('returns subtitle list on success', async () => {
+    it('returns only manual subtitles (excludes auto captions)', async () => {
       const mockExecFile = vi.mocked(execFile);
       mockExecFile.mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
         const callback = cb || _opts;
@@ -154,6 +154,7 @@ describe('YouTube API', () => {
             'Language  Name',
             '---',
             'ja       Japanese',
+            'fr       French',
           ].join('\n');
           callback(null, output, '');
         }
@@ -166,9 +167,8 @@ describe('YouTube API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([
-        { code: 'ko', label: 'Korean', auto: false },
-        { code: 'en', label: 'English', auto: false },
-        { code: 'ja', label: 'Japanese', auto: true },
+        { code: 'ko', label: 'Korean' },
+        { code: 'en', label: 'English' },
       ]);
     });
   });
