@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface YoutubeGifExtractorProps {
   downloadYoutubeGif: (url: string, start: number, end: number, width?: number) => Promise<Blob>;
@@ -44,6 +44,37 @@ function extractYoutubeVideoId(url: string): string | null {
   return null;
 }
 
+declare global {
+  interface Window {
+    YT: {
+      Player: new (el: string | HTMLElement, config: Record<string, unknown>) => YTPlayer;
+      PlayerState: { PLAYING: number };
+    };
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+interface YTPlayer {
+  getCurrentTime: () => number;
+  destroy: () => void;
+}
+
+function loadYouTubeAPI(): Promise<void> {
+  if (window.YT?.Player) return Promise.resolve();
+  return new Promise((resolve) => {
+    if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const check = setInterval(() => {
+        if (window.YT?.Player) { clearInterval(check); resolve(); }
+      }, 100);
+      return;
+    }
+    window.onYouTubeIframeAPIReady = () => resolve();
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  });
+}
+
 const WIDTH_OPTIONS = [
   { label: '320px', value: 320 },
   { label: '480px', value: 480 },
@@ -61,6 +92,8 @@ export function YoutubeGifExtractor({ downloadYoutubeGif, onClose }: YoutubeGifE
   const [width, setWidth] = useState(480);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const playerRef = useRef<YTPlayer | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   const videoId = extractYoutubeVideoId(youtubeUrl);
 
@@ -71,6 +104,48 @@ export function YoutubeGifExtractor({ downloadYoutubeGif, onClose }: YoutubeGifE
   useEffect(() => {
     if (!editingEnd) setEndText(formatTime(endTime));
   }, [endTime, editingEnd]);
+
+  useEffect(() => {
+    if (!videoId || !playerContainerRef.current) {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+      return;
+    }
+
+    let cancelled = false;
+    loadYouTubeAPI().then(() => {
+      if (cancelled || !playerContainerRef.current) return;
+
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+
+      const el = document.createElement('div');
+      el.id = `yt-player-${Date.now()}`;
+      playerContainerRef.current.innerHTML = '';
+      playerContainerRef.current.appendChild(el);
+
+      try {
+        playerRef.current = new window.YT.Player(el.id, {
+          videoId,
+          width: '100%',
+          height: '100%',
+          playerVars: { playsinline: 1 },
+        } as Record<string, unknown>);
+      } catch { /* YT Player init may fail in non-browser environments */ }
+    });
+
+    return () => {
+      cancelled = true;
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [videoId]);
 
   const commitStart = (text: string) => {
     setEditingStart(false);
@@ -91,6 +166,18 @@ export function YoutubeGifExtractor({ downloadYoutubeGif, onClose }: YoutubeGifE
       setEndText(formatTime(endTime));
     }
   };
+
+  const setStartFromPlayer = useCallback(() => {
+    if (playerRef.current) {
+      setStartTime(playerRef.current.getCurrentTime());
+    }
+  }, []);
+
+  const setEndFromPlayer = useCallback(() => {
+    if (playerRef.current) {
+      setEndTime(playerRef.current.getCurrentTime());
+    }
+  }, []);
 
   const duration = endTime - startTime;
   const isValid = youtubeUrl.trim() !== '' && duration > 0 && duration <= 30;
@@ -152,42 +239,61 @@ export function YoutubeGifExtractor({ downloadYoutubeGif, onClose }: YoutubeGifE
           </div>
 
           {videoId && (
-            <div className="rounded-lg overflow-hidden bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}`}
-                className="w-full aspect-video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            <div
+              ref={playerContainerRef}
+              className="rounded-lg overflow-hidden bg-black aspect-video"
+              data-testid="youtube-player"
+            />
           )}
 
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label htmlFor="yt-gif-start" className="block text-xs text-neutral-400 mb-1">시작</label>
-              <input
-                id="yt-gif-start"
-                type="text"
-                value={startText}
-                onChange={(e) => setStartText(e.target.value)}
-                onFocus={() => setEditingStart(true)}
-                onBlur={() => commitStart(startText)}
-                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm text-white font-mono focus:border-blue-500 focus:outline-none"
-              />
+              <div className="flex gap-1">
+                <input
+                  id="yt-gif-start"
+                  type="text"
+                  value={startText}
+                  onChange={(e) => setStartText(e.target.value)}
+                  onFocus={() => setEditingStart(true)}
+                  onBlur={() => commitStart(startText)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm text-white font-mono focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={setStartFromPlayer}
+                  title="현재 위치를 시작점으로"
+                  disabled={!videoId}
+                  className="rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-xs text-blue-400 hover:bg-neutral-700 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  현재
+                </button>
+              </div>
             </div>
             <div className="flex-1">
               <label htmlFor="yt-gif-end" className="block text-xs text-neutral-400 mb-1">종료</label>
-              <input
-                id="yt-gif-end"
-                type="text"
-                value={endText}
-                onChange={(e) => setEndText(e.target.value)}
-                onFocus={() => setEditingEnd(true)}
-                onBlur={() => commitEnd(endText)}
-                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm text-white font-mono focus:border-blue-500 focus:outline-none"
-              />
+              <div className="flex gap-1">
+                <input
+                  id="yt-gif-end"
+                  type="text"
+                  value={endText}
+                  onChange={(e) => setEndText(e.target.value)}
+                  onFocus={() => setEditingEnd(true)}
+                  onBlur={() => commitEnd(endText)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-sm text-white font-mono focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={setEndFromPlayer}
+                  title="현재 위치를 종료점으로"
+                  disabled={!videoId}
+                  className="rounded bg-neutral-800 border border-neutral-700 px-2 py-1.5 text-xs text-blue-400 hover:bg-neutral-700 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  현재
+                </button>
+              </div>
             </div>
             <div>
               <label htmlFor="yt-gif-width" className="block text-xs text-neutral-400 mb-1">너비</label>

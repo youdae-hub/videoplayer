@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { YoutubeGifExtractor } from './YoutubeGifExtractor';
@@ -9,8 +9,19 @@ describe('YoutubeGifExtractor', () => {
     onClose: vi.fn(),
   };
 
+  beforeEach(() => {
+    (window as any).YT = {
+      Player: vi.fn().mockImplementation(() => ({
+        getCurrentTime: vi.fn().mockReturnValue(5.5),
+        destroy: vi.fn(),
+      })),
+      PlayerState: { PLAYING: 1 },
+    };
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
+    delete (window as any).YT;
   });
 
   it('renders title and close button', () => {
@@ -57,8 +68,7 @@ describe('YoutubeGifExtractor', () => {
     const user = userEvent.setup();
     render(<YoutubeGifExtractor {...defaultProps} />);
 
-    const urlInput = screen.getByLabelText('YouTube URL');
-    await user.type(urlInput, 'https://www.youtube.com/watch?v=test');
+    await user.type(screen.getByLabelText('YouTube URL'), 'https://www.youtube.com/watch?v=test');
 
     const btn = screen.getByText('GIF 다운로드');
     expect(btn).toBeDisabled();
@@ -159,15 +169,34 @@ describe('YoutubeGifExtractor', () => {
     });
   });
 
-  it('shows YouTube embed preview when valid URL entered', async () => {
+  it('shows YouTube player container when valid URL entered', async () => {
     const user = userEvent.setup();
     render(<YoutubeGifExtractor {...defaultProps} />);
 
     await user.type(screen.getByLabelText('YouTube URL'), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-    await user.tab();
 
-    const iframe = document.querySelector('iframe');
-    expect(iframe).toBeTruthy();
-    expect(iframe?.src).toContain('youtube.com/embed/dQw4w9WgXcQ');
+    expect(screen.getByTestId('youtube-player')).toBeInTheDocument();
+  });
+
+  it('renders current time buttons for start and end', () => {
+    render(<YoutubeGifExtractor {...defaultProps} />);
+    expect(screen.getByTitle('현재 위치를 시작점으로')).toBeInTheDocument();
+    expect(screen.getByTitle('현재 위치를 종료점으로')).toBeInTheDocument();
+  });
+
+  it('disables current time buttons when no video loaded', () => {
+    render(<YoutubeGifExtractor {...defaultProps} />);
+    expect(screen.getByTitle('현재 위치를 시작점으로')).toBeDisabled();
+    expect(screen.getByTitle('현재 위치를 종료점으로')).toBeDisabled();
+  });
+
+  it('enables current time buttons when video URL is entered', async () => {
+    const user = userEvent.setup();
+    render(<YoutubeGifExtractor {...defaultProps} />);
+
+    await user.type(screen.getByLabelText('YouTube URL'), 'https://www.youtube.com/watch?v=test');
+
+    expect(screen.getByTitle('현재 위치를 시작점으로')).not.toBeDisabled();
+    expect(screen.getByTitle('현재 위치를 종료점으로')).not.toBeDisabled();
   });
 });

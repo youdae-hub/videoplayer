@@ -67,7 +67,7 @@ gifRouter.post('/from-url', async (req, res) => {
         '--no-playlist',
         '-o', tmpFile,
         url,
-      ], { timeout: 120000 }, (err, _stdout, stderr) => {
+      ], { timeout: 120000, env: { ...process.env, PATH: `${process.env.PATH}:/usr/local/bin` } }, (err, _stdout, stderr) => {
         if (err) {
           reject(new Error(stderr || err.message));
         } else {
