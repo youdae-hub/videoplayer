@@ -1,4 +1,4 @@
-import type { VideoService, PaginatedResponse, VideoInput, SupportedLanguage } from './types';
+import type { VideoService, PaginatedResponse, VideoInput, SupportedLanguage, SubtitleCue } from './types';
 import type { Video } from '@videoplayer/core';
 import { createApiClient } from './apiClient';
 
@@ -159,6 +159,16 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
 
     getAudioUrl(id: string): string {
       return `${serverUrl}/api/videos/${id}/audio`;
+    },
+
+    async getSubtitleCues(subtitleId: string): Promise<SubtitleCue[]> {
+      const res = await api.get<{ data: SubtitleCue[] }>(`/api/subtitles/${subtitleId}/cues`);
+      return res.data;
+    },
+
+    async updateSubtitleCues(subtitleId: string, cues: SubtitleCue[]): Promise<SubtitleCue[]> {
+      const res = await api.put<{ data: SubtitleCue[] }>(`/api/subtitles/${subtitleId}/cues`, { cues });
+      return res.data;
     },
   };
 }

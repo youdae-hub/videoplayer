@@ -19,6 +19,12 @@ export interface VideoInput {
   thumbnailBlob?: Blob;
 }
 
+export interface SubtitleCue {
+  startTime: number;
+  endTime: number;
+  text: string;
+}
+
 export interface SupportedLanguage {
   code: string;
   label: string;
@@ -35,4 +41,6 @@ export interface VideoService {
   translateVideo?(id: string, targetLanguage: string): Promise<void>;
   getLanguages?(): Promise<SupportedLanguage[]>;
   getAudioUrl?(id: string): string;
+  getSubtitleCues?(subtitleId: string): Promise<SubtitleCue[]>;
+  updateSubtitleCues?(subtitleId: string, cues: SubtitleCue[]): Promise<SubtitleCue[]>;
 }

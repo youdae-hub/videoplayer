@@ -4,8 +4,10 @@ import { formatTime } from '@videoplayer/core';
 import { videoService } from '../services/createVideoService';
 import type { VideoInput, SupportedLanguage } from '../services/types';
 import { VideoFormModal } from '../components/VideoFormModal';
+import { SubtitleEditor } from '../components/SubtitleEditor';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
+import type { Subtitle } from '@videoplayer/core';
 
 async function downloadSubtitle(src: string, label: string) {
   const res = await fetch(src);
@@ -25,11 +27,13 @@ function SubtitleStatusBadge({
   languages,
   onTranscribe,
   onTranslate,
+  onEdit,
 }: {
   video: Video;
   languages: SupportedLanguage[];
   onTranscribe: (id: string) => void;
   onTranslate: (id: string, lang: string) => void;
+  onEdit?: (video: Video, subtitle: Subtitle) => void;
 }) {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const status = video.subtitleStatus || 'none';
@@ -59,6 +63,18 @@ function SubtitleStatusBadge({
               className="inline-flex items-center gap-1 rounded-full bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-400"
             >
               {s.label}
+              {onEdit && (
+                <button
+                  className="text-green-600 hover:text-green-300 transition-colors"
+                  title={`${s.label} 자막 편집`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(video, s);
+                  }}
+                >
+                  ✎
+                </button>
+              )}
               <button
                 className="text-green-600 hover:text-green-300 transition-colors"
                 title={`${s.label} 자막 다운로드`}
@@ -160,6 +176,7 @@ export function CmsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Video | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [languages, setLanguages] = useState<SupportedLanguage[]>([]);
+  const [editSubtitleTarget, setEditSubtitleTarget] = useState<{ video: Video; subtitle: Subtitle } | null>(null);
   const blobUrlsRef = useRef<string[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -338,7 +355,7 @@ export function CmsPage() {
                     <span className="text-xs text-neutral-400 tabular-nums">{formatTime(video.duration)}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <SubtitleStatusBadge video={video} languages={languages} onTranscribe={handleTranscribe} onTranslate={handleTranslate} />
+                    <SubtitleStatusBadge video={video} languages={languages} onTranscribe={handleTranscribe} onTranslate={handleTranslate} onEdit={videoService.getSubtitleCues ? (v, s) => setEditSubtitleTarget({ video: v, subtitle: s }) : undefined} />
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="text-xs text-neutral-500">{new Date(video.updatedAt).toLocaleDateString()}</span>
@@ -405,6 +422,16 @@ export function CmsPage() {
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
           loading={deleting}
+        />
+      )}
+
+      {editSubtitleTarget && videoService.getSubtitleCues && videoService.updateSubtitleCues && (
+        <SubtitleEditor
+          videoSrc={editSubtitleTarget.video.videoUrl}
+          subtitle={editSubtitleTarget.subtitle}
+          onLoad={videoService.getSubtitleCues.bind(videoService)}
+          onSave={videoService.updateSubtitleCues.bind(videoService)}
+          onClose={() => setEditSubtitleTarget(null)}
         />
       )}
     </div>
