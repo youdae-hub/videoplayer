@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import path from 'path';
+import fs from 'fs';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 import { prisma } from '../db.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { startTranscription } from '../services/transcribe.js';
 import { startTranslation } from '../services/translate.js';
 import { SUPPORTED_LANGUAGES, isSupported } from '../services/languages.js';
@@ -37,6 +42,57 @@ videoRouter.get('/', async (req, res) => {
 
 videoRouter.get('/meta/languages', async (_req, res) => {
   res.json({ data: SUPPORTED_LANGUAGES });
+});
+
+videoRouter.get('/:id/audio', async (req, res) => {
+  const video = await prisma.video.findUnique({ where: { id: req.params.id } });
+
+  if (!video) {
+    res.status(404).json({ error: 'Video not found' });
+    return;
+  }
+
+  if (!video.videoUrl || !video.videoUrl.startsWith('/uploads/videos/')) {
+    res.status(400).json({ error: 'No uploaded video file to extract audio from' });
+    return;
+  }
+
+  const videoPath = path.join(__dirname, '..', '..', video.videoUrl);
+  if (!fs.existsSync(videoPath)) {
+    res.status(404).json({ error: 'Video file not found on disk' });
+    return;
+  }
+
+  const safeTitle = video.title.replace(/[^a-zA-Z0-9가-힣\s_-]/g, '').trim() || 'audio';
+  res.setHeader('Content-Type', 'audio/mpeg');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.mp3"`);
+
+  const ffmpeg = spawn('ffmpeg', [
+    '-i', videoPath,
+    '-vn',
+    '-codec:a', 'libmp3lame',
+    '-q:a', '2',
+    '-f', 'mp3',
+    'pipe:1',
+  ], { stdio: ['ignore', 'pipe', 'ignore'] });
+
+  ffmpeg.stdout.pipe(res);
+
+  ffmpeg.on('error', () => {
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to extract audio' });
+    }
+  });
+
+  ffmpeg.on('close', (code) => {
+    if (code !== 0 && !res.headersSent) {
+      res.status(500).json({ error: 'Audio extraction failed' });
+    }
+  });
+
+  res.on('close', () => {
+    ffmpeg.kill();
+  });
 });
 
 videoRouter.get('/:id', async (req, res) => {

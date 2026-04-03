@@ -34,4 +34,5 @@ export interface VideoService {
   transcribeVideo?(id: string): Promise<void>;
   translateVideo?(id: string, targetLanguage: string): Promise<void>;
   getLanguages?(): Promise<SupportedLanguage[]>;
+  getAudioUrl?(id: string): string;
 }

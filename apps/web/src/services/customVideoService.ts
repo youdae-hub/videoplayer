@@ -156,5 +156,9 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
       const res = await api.get<{ data: SupportedLanguage[] }>('/api/videos/meta/languages');
       return res.data;
     },
+
+    getAudioUrl(id: string): string {
+      return `${serverUrl}/api/videos/${id}/audio`;
+    },
   };
 }

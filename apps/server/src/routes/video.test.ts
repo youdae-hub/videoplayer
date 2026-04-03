@@ -155,6 +155,32 @@ describe('Video API', () => {
     });
   });
 
+  describe('GET /api/videos/:id/audio', () => {
+    it('returns 404 for non-existent video', async () => {
+      const res = await request(app).get('/api/videos/non-existent/audio');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 400 for video without uploaded file', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'URL Video', videoUrl: 'https://example.com/v.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/audio`);
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 404 when video file does not exist on disk', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'Missing File', videoUrl: '/uploads/videos/nonexistent.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/audio`);
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Video file not found on disk');
+    });
+  });
+
   describe('POST /api/videos/:id/transcribe', () => {
     it('starts transcription for existing video', async () => {
       const video = await prisma.video.create({

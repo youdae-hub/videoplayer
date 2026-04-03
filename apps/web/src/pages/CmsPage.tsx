@@ -352,6 +352,16 @@ export function CmsPage() {
                       >
                         Edit
                       </button>
+                      {videoService.getAudioUrl && video.videoUrl.includes('/uploads/') && (
+                        <a
+                          className="rounded-md px-3 py-1.5 text-xs text-purple-400 transition-colors hover:bg-purple-900/30 hover:text-purple-300"
+                          title="Extract audio as MP3"
+                          href={videoService.getAudioUrl(video.id)}
+                          download
+                        >
+                          MP3
+                        </a>
+                      )}
                       <button
                         className="rounded-md px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-900/30 hover:text-red-300"
                         title="Delete"
