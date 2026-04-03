@@ -285,7 +285,7 @@ export function CmsPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900">
+      <div className="overflow-visible rounded-lg border border-neutral-800 bg-neutral-900">
         <table className="w-full text-left text-sm">
           <thead className="bg-neutral-800 text-neutral-400 text-xs uppercase tracking-wider">
             <tr>
