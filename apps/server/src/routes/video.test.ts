@@ -181,6 +181,62 @@ describe('Video API', () => {
     });
   });
 
+  describe('GET /api/videos/:id/gif', () => {
+    it('returns 404 for non-existent video', async () => {
+      const res = await request(app).get('/api/videos/non-existent/gif?start=0&end=3');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 400 for video without uploaded file', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'URL Video', videoUrl: 'https://example.com/v.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/gif?start=0&end=3`);
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when start or end is missing', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'Test', videoUrl: '/uploads/videos/test.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/gif`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('start and end query parameters are required');
+    });
+
+    it('returns 400 when start >= end', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'Test', videoUrl: '/uploads/videos/test.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/gif?start=5&end=3`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('start must be less than end');
+    });
+
+    it('returns 400 when duration exceeds 30 seconds', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'Test', videoUrl: '/uploads/videos/test.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/gif?start=0&end=35`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('GIF duration must not exceed 30 seconds');
+    });
+
+    it('returns 404 when video file does not exist on disk', async () => {
+      const video = await prisma.video.create({
+        data: { title: 'Missing', videoUrl: '/uploads/videos/nonexistent.mp4' },
+      });
+
+      const res = await request(app).get(`/api/videos/${video.id}/gif?start=0&end=3`);
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Video file not found on disk');
+    });
+  });
+
   describe('POST /api/videos/:id/transcribe', () => {
     it('starts transcription for existing video', async () => {
       const video = await prisma.video.create({

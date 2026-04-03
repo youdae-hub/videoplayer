@@ -43,4 +43,5 @@ export interface VideoService {
   getAudioUrl?(id: string): string;
   getSubtitleCues?(subtitleId: string): Promise<SubtitleCue[]>;
   updateSubtitleCues?(subtitleId: string, cues: SubtitleCue[]): Promise<SubtitleCue[]>;
+  getGifUrl?(id: string, start: number, end: number, width?: number): string;
 }

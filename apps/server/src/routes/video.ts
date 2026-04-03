@@ -95,6 +95,76 @@ videoRouter.get('/:id/audio', async (req, res) => {
   });
 });
 
+videoRouter.get('/:id/gif', async (req, res) => {
+  const start = parseFloat(req.query.start as string);
+  const end = parseFloat(req.query.end as string);
+
+  if (isNaN(start) || isNaN(end)) {
+    res.status(400).json({ error: 'start and end query parameters are required' });
+    return;
+  }
+
+  if (start >= end) {
+    res.status(400).json({ error: 'start must be less than end' });
+    return;
+  }
+
+  if (end - start > 30) {
+    res.status(400).json({ error: 'GIF duration must not exceed 30 seconds' });
+    return;
+  }
+
+  const video = await prisma.video.findUnique({ where: { id: req.params.id } });
+
+  if (!video) {
+    res.status(404).json({ error: 'Video not found' });
+    return;
+  }
+
+  if (!video.videoUrl || !video.videoUrl.startsWith('/uploads/videos/')) {
+    res.status(400).json({ error: 'No uploaded video file to extract GIF from' });
+    return;
+  }
+
+  const videoPath = path.join(__dirname, '..', '..', video.videoUrl);
+  if (!fs.existsSync(videoPath)) {
+    res.status(404).json({ error: 'Video file not found on disk' });
+    return;
+  }
+
+  const width = Number(req.query.width) || 480;
+  const safeTitle = video.title.replace(/[^a-zA-Z0-9가-힣\s_-]/g, '').trim() || 'clip';
+  res.setHeader('Content-Type', 'image/gif');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.gif"`);
+
+  const ffmpeg = spawn('ffmpeg', [
+    '-ss', String(start),
+    '-to', String(end),
+    '-i', videoPath,
+    '-vf', `fps=15,scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
+    '-f', 'gif',
+    'pipe:1',
+  ], { stdio: ['ignore', 'pipe', 'ignore'] });
+
+  ffmpeg.stdout.pipe(res);
+
+  ffmpeg.on('error', () => {
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to create GIF' });
+    }
+  });
+
+  ffmpeg.on('close', (code) => {
+    if (code !== 0 && !res.headersSent) {
+      res.status(500).json({ error: 'GIF creation failed' });
+    }
+  });
+
+  res.on('close', () => {
+    ffmpeg.kill();
+  });
+});
+
 videoRouter.get('/:id', async (req, res) => {
   const video = await prisma.video.findUnique({
     where: { id: req.params.id },
@@ -227,4 +297,3 @@ videoRouter.post('/:id/translate', async (req, res) => {
 
   res.json({ data: { status: 'translating', from: sourceSubtitle.language, to: targetLanguage } });
 });
-

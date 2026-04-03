@@ -5,6 +5,7 @@ import { videoService } from '../services/createVideoService';
 import type { VideoInput, SupportedLanguage } from '../services/types';
 import { VideoFormModal } from '../components/VideoFormModal';
 import { SubtitleEditor } from '../components/SubtitleEditor';
+import { GifExtractor } from '../components/GifExtractor';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
 import type { Subtitle } from '@videoplayer/core';
@@ -177,6 +178,7 @@ export function CmsPage() {
   const [deleting, setDeleting] = useState(false);
   const [languages, setLanguages] = useState<SupportedLanguage[]>([]);
   const [editSubtitleTarget, setEditSubtitleTarget] = useState<{ video: Video; subtitle: Subtitle } | null>(null);
+  const [gifTarget, setGifTarget] = useState<Video | null>(null);
   const blobUrlsRef = useRef<string[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -379,6 +381,15 @@ export function CmsPage() {
                           MP3
                         </a>
                       )}
+                      {videoService.getGifUrl && video.videoUrl.includes('/uploads/') && (
+                        <button
+                          className="rounded-md px-3 py-1.5 text-xs text-emerald-400 transition-colors hover:bg-emerald-900/30 hover:text-emerald-300"
+                          title="Extract GIF from video"
+                          onClick={() => setGifTarget(video)}
+                        >
+                          GIF
+                        </button>
+                      )}
                       <button
                         className="rounded-md px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-900/30 hover:text-red-300"
                         title="Delete"
@@ -432,6 +443,16 @@ export function CmsPage() {
           onLoad={videoService.getSubtitleCues.bind(videoService)}
           onSave={videoService.updateSubtitleCues.bind(videoService)}
           onClose={() => setEditSubtitleTarget(null)}
+        />
+      )}
+
+      {gifTarget && videoService.getGifUrl && (
+        <GifExtractor
+          videoSrc={gifTarget.videoUrl}
+          videoId={gifTarget.id}
+          videoTitle={gifTarget.title}
+          getGifUrl={videoService.getGifUrl.bind(videoService)}
+          onClose={() => setGifTarget(null)}
         />
       )}
     </div>

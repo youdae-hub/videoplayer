@@ -170,5 +170,11 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
       const res = await api.put<{ data: SubtitleCue[] }>(`/api/subtitles/${subtitleId}/cues`, { cues });
       return res.data;
     },
+
+    getGifUrl(id: string, start: number, end: number, width?: number): string {
+      const params = new URLSearchParams({ start: String(start), end: String(end) });
+      if (width) params.set('width', String(width));
+      return `${serverUrl}/api/videos/${id}/gif?${params}`;
+    },
   };
 }
