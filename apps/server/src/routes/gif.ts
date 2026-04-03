@@ -60,6 +60,12 @@ gifRouter.post('/from-url', async (req, res) => {
   try {
     await new Promise<void>((resolve, reject) => {
       const sectionArg = `*${startNum}-${endNum}`;
+      const env = { ...process.env, PATH: `${process.env.PATH}:/usr/local/bin` };
+      delete env.http_proxy;
+      delete env.https_proxy;
+      delete env.HTTP_PROXY;
+      delete env.HTTPS_PROXY;
+
       execFile('/usr/local/bin/yt-dlp', [
         '--download-sections', sectionArg,
         '--force-keyframes-at-cuts',
@@ -67,7 +73,7 @@ gifRouter.post('/from-url', async (req, res) => {
         '--no-playlist',
         '-o', tmpFile,
         url,
-      ], { timeout: 120000, env: { ...process.env, PATH: `${process.env.PATH}:/usr/local/bin` } }, (err, _stdout, stderr) => {
+      ], { timeout: 120000, env }, (err, _stdout, stderr) => {
         if (err) {
           reject(new Error(stderr || err.message));
         } else {
@@ -114,7 +120,16 @@ gifRouter.post('/from-url', async (req, res) => {
   } catch (err: any) {
     cleanup();
     if (!res.headersSent) {
-      res.status(500).json({ error: `Download failed: ${err.message}` });
+      const msg = err.message || '';
+      let userError = '동영상 다운로드에 실패했습니다.';
+      if (msg.includes('ENOENT')) {
+        userError = 'yt-dlp가 설치되어 있지 않습니다. 서버에 yt-dlp를 설치해 주세요.';
+      } else if (msg.includes('proxy') || msg.includes('Proxy') || msg.includes('Tunnel')) {
+        userError = 'YouTube에 연결할 수 없습니다. 네트워크 또는 프록시 설정을 확인해 주세요.';
+      } else if (msg.includes('Video unavailable') || msg.includes('not available')) {
+        userError = '해당 영상을 찾을 수 없거나 비공개 영상입니다.';
+      }
+      res.status(500).json({ error: userError });
     }
   }
 });
