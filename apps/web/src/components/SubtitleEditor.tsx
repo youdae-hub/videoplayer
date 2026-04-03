@@ -36,6 +36,52 @@ function parseTimeInput(value: string): number | null {
   return hr * 3600 + min * 60 + sec + ms / 1000;
 }
 
+function TimeInput({
+  value,
+  onCommit,
+  onFocus,
+  className,
+}: {
+  value: number;
+  onCommit: (time: number) => void;
+  onFocus?: () => void;
+  className?: string;
+}) {
+  const [text, setText] = useState(formatTime(value));
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setText(formatTime(value));
+  }, [value, editing]);
+
+  return (
+    <input
+      type="text"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onFocus={() => {
+        setEditing(true);
+        onFocus?.();
+      }}
+      onBlur={() => {
+        setEditing(false);
+        const parsed = parseTimeInput(text);
+        if (parsed !== null) {
+          onCommit(parsed);
+        } else {
+          setText(formatTime(value));
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className={className}
+    />
+  );
+}
+
 export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: SubtitleEditorProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cues, setCues] = useState<SubtitleCue[]>([]);
@@ -62,7 +108,22 @@ export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: 
   }, []);
 
   const updateCue = useCallback((index: number, field: keyof SubtitleCue, value: string | number) => {
-    setCues((prev) => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+    setCues((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+
+      if (field === 'endTime' && typeof value === 'number') {
+        const nextCue = updated[index + 1];
+        if (nextCue) {
+          const maxEnd = nextCue.endTime;
+          const clamped = Math.min(value, maxEnd);
+          updated[index] = { ...updated[index], endTime: clamped };
+          updated[index + 1] = { ...nextCue, startTime: clamped };
+        }
+      }
+
+      return updated;
+    });
     setDirty(true);
   }, []);
 
@@ -175,25 +236,17 @@ export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: 
                   >
                     <td className="py-2 text-neutral-500 text-xs">{i + 1}</td>
                     <td className="py-2 pr-2">
-                      <input
-                        type="text"
-                        value={formatTime(cue.startTime)}
-                        onChange={(e) => {
-                          const t = parseTimeInput(e.target.value);
-                          if (t !== null) updateCue(i, 'startTime', t);
-                        }}
+                      <TimeInput
+                        value={cue.startTime}
+                        onCommit={(t) => updateCue(i, 'startTime', t)}
                         onFocus={() => seekTo(cue.startTime)}
                         className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
                       />
                     </td>
                     <td className="py-2 pr-2">
-                      <input
-                        type="text"
-                        value={formatTime(cue.endTime)}
-                        onChange={(e) => {
-                          const t = parseTimeInput(e.target.value);
-                          if (t !== null) updateCue(i, 'endTime', t);
-                        }}
+                      <TimeInput
+                        value={cue.endTime}
+                        onCommit={(t) => updateCue(i, 'endTime', t)}
                         className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
                       />
                     </td>
