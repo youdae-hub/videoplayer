@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SubtitleEditor } from './SubtitleEditor';
 import type { SubtitleCue } from '../services/types';
@@ -129,5 +129,21 @@ describe('SubtitleEditor', () => {
 
     expect(screen.queryByDisplayValue('First cue')).not.toBeInTheDocument();
     expect(screen.getByDisplayValue('Second cue')).toBeInTheDocument();
+  });
+
+  it('shows subtitle overlay on video when cue is active', async () => {
+    render(<SubtitleEditor {...defaultProps} />);
+    await waitFor(() => screen.getByDisplayValue('First cue'));
+
+    expect(screen.queryByTestId('subtitle-overlay')).not.toBeInTheDocument();
+
+    const video = document.querySelector('video')!;
+    Object.defineProperty(video, 'currentTime', { value: 2, writable: true });
+    act(() => {
+      video.dispatchEvent(new Event('timeupdate'));
+    });
+
+    const overlay = screen.getByTestId('subtitle-overlay');
+    expect(overlay).toHaveTextContent('First cue');
   });
 });

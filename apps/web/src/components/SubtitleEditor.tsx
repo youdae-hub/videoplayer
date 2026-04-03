@@ -218,16 +218,28 @@ export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: 
         )}
 
         <div className="px-6 py-4 border-b border-neutral-700">
-          <video
-            ref={videoRef}
-            src={videoSrc}
-            controls
-            muted
-            playsInline
-            preload="auto"
-            onTimeUpdate={handleTimeUpdate}
-            className="w-full max-h-[250px] rounded-lg bg-black"
-          />
+          <div className="relative">
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              controls
+              muted
+              playsInline
+              preload="auto"
+              onTimeUpdate={handleTimeUpdate}
+              className="w-full max-h-[250px] rounded-lg bg-black"
+            />
+            {activeCueIndex >= 0 && (
+              <div
+                className="absolute bottom-10 left-0 right-0 pointer-events-none text-center px-4"
+                data-testid="subtitle-overlay"
+              >
+                <span className="inline-block rounded bg-black/75 px-3 py-1 text-sm text-white">
+                  {cues[activeCueIndex].text}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
