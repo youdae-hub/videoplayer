@@ -93,18 +93,30 @@ describe('SubtitleEditor', () => {
     ]));
   });
 
-  it('adds a new cue when add button clicked', async () => {
+  it('adds a new cue at end when bottom add button clicked', async () => {
     const user = userEvent.setup();
     render(<SubtitleEditor {...defaultProps} />);
     await waitFor(() => screen.getByDisplayValue('First cue'));
 
     const rows = screen.getAllByRole('row');
-    const initialCount = rows.length - 1; // minus header
+    const initialCount = rows.length - 1;
 
     await user.click(screen.getByText('+ 자막 추가'));
 
     const newRows = screen.getAllByRole('row');
     expect(newRows.length - 1).toBe(initialCount + 1);
+  });
+
+  it('inserts a cue after a specific row when inline add button clicked', async () => {
+    const user = userEvent.setup();
+    render(<SubtitleEditor {...defaultProps} />);
+    await waitFor(() => screen.getByDisplayValue('First cue'));
+
+    const addButtons = screen.getAllByTitle('아래에 추가');
+    await user.click(addButtons[0]);
+
+    const rows = screen.getAllByRole('row');
+    expect(rows.length - 1).toBe(3);
   });
 
   it('removes a cue when delete button clicked', async () => {

@@ -127,11 +127,27 @@ export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: 
     setDirty(true);
   }, []);
 
-  const addCue = useCallback(() => {
-    const lastEnd = cues.length > 0 ? cues[cues.length - 1].endTime : 0;
-    setCues((prev) => [...prev, { startTime: lastEnd, endTime: lastEnd + 3, text: '' }]);
+  const addCueAfter = useCallback((index: number) => {
+    setCues((prev) => {
+      const current = prev[index];
+      const next = prev[index + 1];
+      const startTime = current ? current.endTime : 0;
+      const endTime = next ? Math.min(startTime + 3, next.startTime) : startTime + 3;
+      const newCue = { startTime, endTime: Math.max(endTime, startTime + 0.5), text: '' };
+      const result = [...prev];
+      result.splice(index + 1, 0, newCue);
+      return result;
+    });
     setDirty(true);
-  }, [cues]);
+  }, []);
+
+  const addCueAtEnd = useCallback(() => {
+    setCues((prev) => {
+      const lastEnd = prev.length > 0 ? prev[prev.length - 1].endTime : 0;
+      return [...prev, { startTime: lastEnd, endTime: lastEnd + 3, text: '' }];
+    });
+    setDirty(true);
+  }, []);
 
   const removeCue = useCallback((index: number) => {
     setCues((prev) => prev.filter((_, i) => i !== index));
@@ -258,7 +274,15 @@ export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: 
                         className="w-full rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-xs text-white focus:border-blue-500 focus:outline-none"
                       />
                     </td>
-                    <td className="py-2 text-center">
+                    <td className="py-2 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => addCueAfter(i)}
+                        className="text-blue-400 hover:text-blue-300 text-xs px-1"
+                        title="아래에 추가"
+                      >
+                        +
+                      </button>
                       <button
                         type="button"
                         onClick={() => removeCue(i)}
@@ -278,7 +302,7 @@ export function SubtitleEditor({ videoSrc, subtitle, onLoad, onSave, onClose }: 
         <div className="px-6 py-3 border-t border-neutral-700">
           <button
             type="button"
-            onClick={addCue}
+            onClick={addCueAtEnd}
             className="text-xs text-blue-400 hover:text-blue-300"
           >
             + 자막 추가
