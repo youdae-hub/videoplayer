@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 interface ThumbnailPickerProps {
   videoSrc: string;
@@ -8,23 +8,34 @@ interface ThumbnailPickerProps {
 
 const CAPTURE_WIDTH = 320;
 
-function captureFromVideo(video: HTMLVideoElement): Promise<{ thumbnailUrl: string; thumbnailBlob: Blob }> {
+function captureFrame(
+  video: HTMLVideoElement,
+  width?: number,
+): Promise<{ dataUrl: string; blob: Blob }> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
-    const scale = CAPTURE_WIDTH / video.videoWidth;
-    canvas.width = CAPTURE_WIDTH;
+    const targetWidth = width ?? video.videoWidth;
+    const scale = targetWidth / video.videoWidth;
+    canvas.width = targetWidth;
     canvas.height = Math.floor(video.videoHeight * scale);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) { reject(new Error('Canvas error')); return; }
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
     canvas.toBlob(
-      (blob) => blob ? resolve({ thumbnailUrl, thumbnailBlob: blob }) : reject(new Error('Blob error')),
+      (blob) => blob ? resolve({ dataUrl, blob }) : reject(new Error('Blob error')),
       'image/jpeg', 0.8,
     );
   });
+}
+
+function formatTimeForFilename(seconds: number): string {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${h}-${m}-${s}`;
 }
 
 export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPickerProps) {
@@ -41,14 +52,31 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
     setError(null);
 
     try {
-      const result = await captureFromVideo(videoRef.current);
-      setPreview({ url: result.thumbnailUrl, blob: result.thumbnailBlob });
+      const result = await captureFrame(videoRef.current, CAPTURE_WIDTH);
+      setPreview({ url: result.dataUrl, blob: result.blob });
     } catch {
       setError('프레임 캡처에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setCapturing(false);
     }
   };
+
+  const handleDownload = useCallback(async () => {
+    if (!videoRef.current) return;
+    setError(null);
+
+    try {
+      const result = await captureFrame(videoRef.current);
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `frame_${formatTimeForFilename(videoRef.current.currentTime)}.jpg`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('프레임 다운로드에 실패했습니다. 다시 시도해주세요.');
+    }
+  }, []);
 
   const handleApply = () => {
     if (!preview) return;
@@ -96,6 +124,14 @@ export function ThumbnailPicker({ videoSrc, onCapture, onClose }: ThumbnailPicke
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
           >
             {capturing ? '캡처 중...' : '현재 프레임 캡처'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={!videoReady}
+            className="rounded-md bg-neutral-700 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-600 transition-colors disabled:opacity-50"
+          >
+            현재 프레임 다운로드
           </button>
         </div>
 

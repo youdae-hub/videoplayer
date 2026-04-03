@@ -61,6 +61,23 @@ describe('ThumbnailPicker', () => {
     expect(captureBtn).not.toBeDisabled();
   });
 
+  it('renders download button', () => {
+    render(<ThumbnailPicker {...defaultProps} />);
+    expect(screen.getByText('현재 프레임 다운로드')).toBeInTheDocument();
+  });
+
+  it('disables download button until video is ready', () => {
+    render(<ThumbnailPicker {...defaultProps} />);
+    const downloadBtn = screen.getByText('현재 프레임 다운로드');
+    expect(downloadBtn).toBeDisabled();
+
+    const video = document.querySelector('video')!;
+    act(() => {
+      video.dispatchEvent(new Event('loadeddata'));
+    });
+    expect(downloadBtn).not.toBeDisabled();
+  });
+
   it('removes video element from DOM on unmount', () => {
     const { unmount } = render(<ThumbnailPicker {...defaultProps} />);
     expect(document.querySelector('video')).toBeInTheDocument();
