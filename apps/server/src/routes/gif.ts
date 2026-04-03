@@ -60,7 +60,7 @@ gifRouter.post('/from-url', async (req, res) => {
   try {
     await new Promise<void>((resolve, reject) => {
       const sectionArg = `*${startNum}-${endNum}`;
-      execFile('yt-dlp', [
+      execFile('/usr/local/bin/yt-dlp', [
         '--download-sections', sectionArg,
         '--force-keyframes-at-cuts',
         '-f', 'mp4/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
