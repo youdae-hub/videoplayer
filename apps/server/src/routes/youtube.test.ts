@@ -138,7 +138,7 @@ describe('YouTube API', () => {
       expect(res.body.error).toBe('Invalid URL format');
     });
 
-    it('returns only manual subtitles (excludes auto captions)', async () => {
+    it('returns both manual and auto subtitles with auto flag', async () => {
       const mockExecFile = vi.mocked(execFile);
       mockExecFile.mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
         const callback = cb || _opts;
@@ -167,8 +167,43 @@ describe('YouTube API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([
-        { code: 'ko', label: 'Korean' },
-        { code: 'en', label: 'English' },
+        { code: 'ko', label: 'Korean', auto: false },
+        { code: 'en', label: 'English', auto: false },
+        { code: 'ja', label: 'Japanese', auto: true },
+        { code: 'fr', label: 'French', auto: true },
+      ]);
+    });
+
+    it('does not duplicate codes when same lang exists in both sections', async () => {
+      const mockExecFile = vi.mocked(execFile);
+      mockExecFile.mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
+        const callback = cb || _opts;
+        if (typeof callback === 'function') {
+          const output = [
+            'Available subtitles for test:',
+            'Language  Name',
+            '---',
+            'ko       Korean',
+            '',
+            'Available automatic captions for test:',
+            'Language  Name',
+            '---',
+            'ko       Korean',
+            'en       English',
+          ].join('\n');
+          callback(null, output, '');
+        }
+        return {} as any;
+      });
+
+      const res = await request(app)
+        .post('/api/youtube/subtitles')
+        .send({ url: 'https://www.youtube.com/watch?v=test' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([
+        { code: 'ko', label: 'Korean', auto: false },
+        { code: 'en', label: 'English', auto: true },
       ]);
     });
   });
