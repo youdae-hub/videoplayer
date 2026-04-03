@@ -6,7 +6,7 @@ import type { VideoInput, SupportedLanguage } from '../services/types';
 import { VideoFormModal } from '../components/VideoFormModal';
 import { SubtitleEditor } from '../components/SubtitleEditor';
 import { GifExtractor } from '../components/GifExtractor';
-import { YoutubeGifExtractor } from '../components/YoutubeGifExtractor';
+import { YoutubeDataExtractor } from '../components/YoutubeDataExtractor';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { revokeVideoUrl } from '../utils/videoFileProcessor';
 import type { Subtitle } from '@videoplayer/core';
@@ -300,12 +300,12 @@ export function CmsPage() {
           >
             + 동영상 추가
           </button>
-          {videoService.downloadYoutubeGif && (
+          {videoService.downloadYoutubeGif && videoService.downloadYoutubeVideo && videoService.listYoutubeSubtitles && videoService.downloadYoutubeSubtitle && (
             <button
               onClick={() => setShowYoutubeGif(true)}
               className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
             >
-              YouTube GIF
+              YouTube 데이터 가져오기
             </button>
           )}
           <span className="rounded bg-neutral-800 px-3 py-1 text-xs text-neutral-400">
@@ -466,9 +466,12 @@ export function CmsPage() {
         />
       )}
 
-      {showYoutubeGif && videoService.downloadYoutubeGif && (
-        <YoutubeGifExtractor
+      {showYoutubeGif && videoService.downloadYoutubeGif && videoService.downloadYoutubeVideo && videoService.listYoutubeSubtitles && videoService.downloadYoutubeSubtitle && (
+        <YoutubeDataExtractor
           downloadYoutubeGif={videoService.downloadYoutubeGif.bind(videoService)}
+          downloadYoutubeVideo={videoService.downloadYoutubeVideo.bind(videoService)}
+          listYoutubeSubtitles={videoService.listYoutubeSubtitles.bind(videoService)}
+          downloadYoutubeSubtitle={videoService.downloadYoutubeSubtitle.bind(videoService)}
           onClose={() => setShowYoutubeGif(false)}
         />
       )}

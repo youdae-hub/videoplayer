@@ -178,10 +178,50 @@ export function createCustomVideoService(baseUrl?: string): VideoService {
     },
 
     async downloadYoutubeGif(url: string, start: number, end: number, width?: number): Promise<Blob> {
-      const res = await fetch(`${serverUrl}/api/gif/from-url`, {
+      const res = await fetch(`${serverUrl}/api/youtube/gif`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, start, end, width: width || 480 }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(body.error || `Failed with status ${res.status}`);
+      }
+      return res.blob();
+    },
+
+    async downloadYoutubeVideo(url: string): Promise<Blob> {
+      const res = await fetch(`${serverUrl}/api/youtube/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(body.error || `Failed with status ${res.status}`);
+      }
+      return res.blob();
+    },
+
+    async listYoutubeSubtitles(url: string): Promise<{ code: string; label: string; auto: boolean }[]> {
+      const res = await fetch(`${serverUrl}/api/youtube/subtitles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(body.error || `Failed with status ${res.status}`);
+      }
+      const json = await res.json();
+      return json.data;
+    },
+
+    async downloadYoutubeSubtitle(url: string, lang: string): Promise<Blob> {
+      const res = await fetch(`${serverUrl}/api/youtube/subtitles/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, lang }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({ error: 'Unknown error' }));

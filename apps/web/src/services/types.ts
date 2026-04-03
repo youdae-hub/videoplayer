@@ -45,4 +45,7 @@ export interface VideoService {
   updateSubtitleCues?(subtitleId: string, cues: SubtitleCue[]): Promise<SubtitleCue[]>;
   getGifUrl?(id: string, start: number, end: number, width?: number): string;
   downloadYoutubeGif?(url: string, start: number, end: number, width?: number): Promise<Blob>;
+  downloadYoutubeVideo?(url: string): Promise<Blob>;
+  listYoutubeSubtitles?(url: string): Promise<{ code: string; label: string; auto: boolean }[]>;
+  downloadYoutubeSubtitle?(url: string, lang: string): Promise<Blob>;
 }
